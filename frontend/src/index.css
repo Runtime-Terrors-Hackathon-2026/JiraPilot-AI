@@ -2,29 +2,86 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --jp-canvas: #f5f6fa;
+  --jp-surface: #ffffff;
+  --jp-surface-2: #eef1f7;
+  --jp-line: #e2e7f0;
+  --jp-ink: #0f172a;
+  --jp-muted: #5b6b82;
+  --jp-accent: #3b5ccc;
+  --jp-accent-soft: #eef1fb;
+  --jp-teal: #0f766e;
+  --jp-teal-soft: #ecfdf8;
+  --jp-amber: #b45309;
+  --jp-amber-soft: #fff7ed;
+  --jp-danger: #dc2626;
+  --jp-danger-soft: #fef2f2;
+  --jp-log: #0f172a;
+  --jp-log-ink: #e2e8f0;
+  --jp-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.dark {
+  --jp-canvas: #0b1220;
+  --jp-surface: #121a2b;
+  --jp-surface-2: #0e1624;
+  --jp-line: #243044;
+  --jp-ink: #e8eef8;
+  --jp-muted: #8b9bb3;
+  --jp-accent: #6b8bff;
+  --jp-accent-soft: #18233d;
+  --jp-teal: #2dd4bf;
+  --jp-teal-soft: #102a28;
+  --jp-amber: #fbbf24;
+  --jp-amber-soft: #2a2110;
+  --jp-danger: #f87171;
+  --jp-danger-soft: #2a1416;
+  --jp-log: #070b14;
+  --jp-log-ink: #dbe7f3;
+  --jp-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-100 font-sans antialiased;
+    @apply bg-canvas text-ink font-sans antialiased;
+  }
+
+  :focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--jp-canvas), 0 0 0 4px var(--jp-accent);
   }
 }
 
-/* Custom Scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: #0f172a;
-}
-::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  width: 8px;
+  height: 8px;
 }
 
-/* Smooth Transitions */
-button, a, input, select, textarea {
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--jp-line);
+  border-radius: 4px;
+}
+
+button,
+a,
+input,
+select,
+textarea {
   @apply transition-colors duration-150;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

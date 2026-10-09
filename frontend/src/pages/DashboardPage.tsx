@@ -1,414 +1,293 @@
-import React, { useState } from 'react';
-import { JiraIssue, DashboardSummary, DashboardMetrics } from '../types';
-import { StatCard } from '../components/StatCard';
+import React, { useMemo } from 'react';
 import {
-  Inbox,
-  CheckCircle2,
   AlertTriangle,
-  Zap,
-  FileCheck,
-  Gauge,
-  Clock,
-  Search,
-  ArrowUpRight,
-  Filter,
-  Layers,
-  ChevronRight,
-  TrendingUp
+  Bell,
+  CheckCircle2,
+  FileSearch,
+  GitBranch,
+  Inbox,
+  PlayCircle,
+  ShieldCheck,
 } from 'lucide-react';
 import {
-  ResponsiveContainer,
-  BarChart,
   Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  Tooltip,
-  PieChart,
-  Pie,
-  Cell,
-  CartesianGrid,
-  Legend
 } from 'recharts';
+import { DashboardMetrics, DashboardSummary, IssueFilter, JiraIssue, MockEmail } from '../types';
+import { MetricCard, Card, EmptyState, PageHeader, StatusBadge, Button } from '../components/ui/primitives';
+import { PRIMARY_MESSAGE, SUPPORTING_MESSAGE } from '../lib/messaging';
+import { formatDateTime, labelStatus } from '../lib/format';
+import { attachmentTone, issueTone, latestAttachment, nextAction } from '../lib/status';
+import { IssueTable } from '../components/IssueTable';
 
 interface DashboardPageProps {
   issues: JiraIssue[];
   summary: DashboardSummary | null;
   metrics: DashboardMetrics | null;
+  emails: MockEmail[];
   onSelectIssue: (key: string) => void;
-  onRefresh: () => void;
+  onNavigateIssues: (filter: IssueFilter) => void;
+  onOpenSimulate: () => void;
+  search: string;
+  filter: IssueFilter;
+  onFilterChange: (filter: IssueFilter) => void;
   loading: boolean;
+  backendReachable: boolean;
+  demoMode?: boolean | null;
+  aiConfigured: boolean;
 }
 
-const COLORS = ['#14b8a6', '#f59e0b', '#8b5cf6', '#3b82f6', '#ef4444', '#10b981'];
+const CHART = ['#3b5ccc', '#0f766e', '#b45309', '#64748b', '#dc2626', '#6b8bff'];
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   issues,
   summary,
   metrics,
+  emails,
   onSelectIssue,
-  onRefresh,
+  onNavigateIssues,
+  onOpenSimulate,
+  search,
+  filter,
+  onFilterChange,
   loading,
+  backendReachable,
+  demoMode,
+  aiConfigured,
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'READY' | 'WAITING' | 'INVESTIGATED'>('ALL');
+  const waiting = summary?.waitingForInfoTickets ?? issues.filter((i) => i.status === 'WAITING_FOR_INFORMATION').length;
+  const ready = summary?.readyTickets ?? issues.filter((i) => i.status === 'READY').length;
+  const running = summary?.investigationsRunning ?? issues.filter((i) => i.investigationStatus === 'RUNNING').length;
+  const completed = summary?.rcaCompleted ?? issues.filter((i) => i.investigationStatus === 'COMPLETED').length;
+  const attentionEmails = emails.filter((e) => (e.status || '').toUpperCase() === 'FAILED').length;
 
-  const filteredIssues = issues.filter((issue) => {
-    const matchesSearch =
-      issue.jiraKey.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      issue.summary.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (issue.affectedService && issue.affectedService.toLowerCase().includes(searchTerm.toLowerCase()));
-
-    if (!matchesSearch) return false;
-    if (statusFilter === 'READY') return issue.status === 'READY';
-    if (statusFilter === 'WAITING') return issue.status === 'WAITING_FOR_INFORMATION';
-    if (statusFilter === 'INVESTIGATED') return issue.status === 'INVESTIGATED';
-    return true;
-  });
-
-  // Prepare chart data
   const statusData = metrics?.ticketsByStatus
-    ? Object.entries(metrics.ticketsByStatus).map(([name, value]) => ({
-        name: name.replace(/_/g, ' '),
-        value,
-      }))
-    : [
-        { name: 'READY', value: 2 },
-        { name: 'WAITING INFO', value: 1 },
-        { name: 'INVESTIGATED', value: 3 },
-      ];
+    ? Object.entries(metrics.ticketsByStatus).map(([name, value]) => ({ name: name.replace(/_/g, ' '), value }))
+    : [];
+  const analysisData = useMemo(() => {
+    const counts: Record<string, number> = {};
+    issues.forEach((issue) => {
+      const key = issue.investigationStatus || 'NOT_STARTED';
+      counts[key] = (counts[key] || 0) + 1;
+    });
+    return Object.entries(counts).map(([name, value]) => ({ name: name.replace(/_/g, ' '), value }));
+  }, [issues]);
 
-  const missingInfoData = metrics?.missingInfoFrequency
-    ? Object.entries(metrics.missingInfoFrequency).map(([name, count]) => ({
-        name: name.replace(/([A-Z])/g, ' $1').trim(),
-        count,
-      }))
-    : [
-        { name: 'Logs', count: 4 },
-        { name: 'Request Payload', count: 3 },
-        { name: 'API Details', count: 2 },
-        { name: 'Environment', count: 1 },
-      ];
+  const apiErrors = issues.flatMap((issue) =>
+    (issue.attachments || [])
+      .filter((att) => att.primaryStatus && att.primaryStatus >= 400)
+      .map((att) => ({ issue, att }))
+  ).slice(0, 6);
 
-  const serviceData = metrics?.incidentsByService
-    ? Object.entries(metrics.incidentsByService).map(([service, count]) => ({
-        service,
-        count,
-      }))
-    : [
-        { service: 'WFM', count: 3 },
-        { service: 'PEDS', count: 2 },
-        { service: 'CIRCUIT-SVC', count: 2 },
-        { service: 'GATEWAY', count: 1 },
-      ];
+  const repos = issues.flatMap((issue) =>
+    (issue.attachments || [])
+      .filter((att) => att.recommendedRepo)
+      .map((att) => ({ issue, att }))
+  ).slice(0, 5);
+
+  const timeline = issues
+    .flatMap((issue) => (issue.auditEvents || []).map((event) => ({ issue, event })))
+    .sort((a, b) => new Date(b.event.timestamp).getTime() - new Date(a.event.timestamp).getTime())
+    .slice(0, 8);
+
+  const attention = [
+    ...issues.filter((i) => i.status === 'WAITING_FOR_INFORMATION').map((i) => ({
+      key: i.jiraKey,
+      title: `${i.jiraKey} is missing essential information`,
+      action: 'Open ticket',
+    })),
+    ...issues.flatMap((i) =>
+      (i.attachments || [])
+        .filter((a) => a.status === 'FAILED')
+        .map((a) => ({ key: i.jiraKey, title: `Failed analysis: ${a.filename}`, action: 'Retry from issue' }))
+    ),
+    ...emails
+      .filter((e) => (e.status || '').toUpperCase() === 'FAILED')
+      .map((e) => ({ key: e.jiraKey, title: `Failed email for ${e.jiraKey}`, action: 'Review notifications' })),
+  ].slice(0, 8);
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Top Stat KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Total Ingested Tickets"
-          value={summary?.totalTickets || issues.length}
-          subtitle="Real-time webhooks & ingest"
-          icon={Inbox}
-          color="blue"
-        />
-        <StatCard
-          title="Ready for Investigation"
-          value={summary?.readyTickets || issues.filter((i) => i.status === 'READY').length}
-          subtitle="Complete diagnostic payload"
-          icon={CheckCircle2}
-          color="emerald"
-          badge="Verified"
-        />
-        <StatCard
-          title="Waiting for Information"
-          value={summary?.waitingForInfoTickets || issues.filter((i) => i.status === 'WAITING_FOR_INFORMATION').length}
-          subtitle="Reporter notified via email"
-          icon={AlertTriangle}
-          color="amber"
-          badge="Action Req"
-        />
-        <StatCard
-          title="RCA Completed"
-          value={summary?.rcaCompleted || issues.filter((i) => i.investigationStatus === 'COMPLETED').length}
-          subtitle="Deep root cause diagnosed"
-          icon={FileCheck}
-          color="purple"
-        />
+      <PageHeader
+        title="Incident Operations"
+        description="A clear view of ticket readiness, investigation progress and recommended next actions."
+        actions={
+          <Button variant="primary" onClick={onOpenSimulate}>
+            <PlayCircle className="h-4 w-4" />
+            Simulate issue
+          </Button>
+        }
+      />
+
+      <Card className="p-4">
+        <p className="text-sm font-medium text-ink">{PRIMARY_MESSAGE}</p>
+        <p className="mt-1 text-xs text-muted">{SUPPORTING_MESSAGE}</p>
+      </Card>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <MetricCard title="Total issues" value={summary?.totalTickets ?? issues.length} hint="Ingested from Jira, demo, or simulation" icon={Inbox} onClick={() => onNavigateIssues('ALL')} />
+        <MetricCard title="Awaiting reporter information" value={waiting} hint="Asking for details is normal engineering practice" icon={AlertTriangle} tone="warning" onClick={() => onNavigateIssues('WAITING')} />
+        <MetricCard title="Ready for investigation" value={ready} hint="Required diagnostic fields are present" icon={CheckCircle2} tone="success" onClick={() => onNavigateIssues('READY')} />
+        <MetricCard title="Investigations in progress" value={running} hint="Analysis currently running" icon={FileSearch} tone="accent" onClick={() => onNavigateIssues('INVESTIGATING')} />
+        <MetricCard title="Completed analyses" value={completed} hint="Evidence-backed findings ready for review" icon={ShieldCheck} tone="info" onClick={() => onNavigateIssues('INVESTIGATED')} />
+        <MetricCard title="Notifications requiring attention" value={attentionEmails} hint="Failed email deliveries only" icon={Bell} tone={attentionEmails ? 'danger' : 'neutral'} />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <StatCard
-          title="Average Ticket Readiness"
-          value={`${summary?.averageReadinessScore || 85}%`}
-          subtitle="Weighted diagnostic completeness"
-          icon={Gauge}
-          color="teal"
-        />
-        <StatCard
-          title="Estimated Time Saved"
-          value={`${summary?.estimatedHoursSaved || 14.5} hrs`}
-          subtitle="* Simulated / estimated comparison vs manual operations"
-          icon={Clock}
-          color="emerald"
-          badge="Est. Metric"
-        />
-      </div>
-
-      {/* Analytics Visual Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Chart 1: Status Breakdown */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-white">Tickets by Lifecycle State</h3>
-            <Layers className="w-4 h-4 text-slate-500" />
-          </div>
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={statusData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={45}
-                  outerRadius={70}
-                  paddingAngle={4}
-                  dataKey="value"
-                >
-                  {statusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', fontSize: '12px' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="flex flex-wrap justify-center gap-2 mt-2">
-            {statusData.map((entry, idx) => (
-              <span key={idx} className="flex items-center text-[11px] text-slate-400">
-                <span className="w-2 h-2 rounded-full mr-1" style={{ backgroundColor: COLORS[idx % COLORS.length] }}></span>
-                {entry.name} ({entry.value})
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Chart 2: Missing Information Frequency */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-white">Missing Diagnostics Frequency</h3>
-            <AlertTriangle className="w-4 h-4 text-amber-400" />
-          </div>
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={missingInfoData} layout="vertical" margin={{ left: 10, right: 20, top: 10, bottom: 0 }}>
-                <XAxis type="number" stroke="#64748b" fontSize={10} />
-                <YAxis dataKey="name" type="category" stroke="#94a3b8" fontSize={10} width={90} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', fontSize: '12px' }}
-                />
-                <Bar dataKey="count" fill="#f59e0b" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Chart 3: Incidents by Affected Service */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-white">Incidents by Service</h3>
-            <TrendingUp className="w-4 h-4 text-teal-400" />
-          </div>
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={serviceData} margin={{ left: 0, right: 10, top: 10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="service" stroke="#94a3b8" fontSize={10} />
-                <YAxis stroke="#64748b" fontSize={10} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', fontSize: '12px' }}
-                />
-                <Bar dataKey="count" fill="#14b8a6" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Ticket Operations Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
-        {/* Table Filters & Search */}
-        <div className="p-4 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-850">
-          <div className="flex items-center space-x-2">
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-500" />
-              <input
-                type="text"
-                placeholder="Search ticket key, summary, service..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 pr-4 py-1.5 rounded-lg bg-slate-950 border border-slate-700/80 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 w-64"
-              />
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <Card className="p-4 xl:col-span-2">
+          <h3 className="mb-3 text-sm font-semibold text-ink">Ticket readiness distribution</h3>
+          {statusData.length === 0 ? (
+            <EmptyState title="No status metrics yet" description="Metrics appear after the backend has ingested issues." />
+          ) : (
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={statusData} dataKey="value" innerRadius={48} outerRadius={72} paddingAngle={3}>
+                    {statusData.map((_, index) => (
+                      <Cell key={index} fill={CHART[index % CHART.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
-
-            <div className="flex bg-slate-950 rounded-lg p-0.5 border border-slate-700">
-              <button
-                onClick={() => setStatusFilter('ALL')}
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition ${
-                  statusFilter === 'ALL' ? 'bg-slate-800 text-teal-400 shadow-sm' : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                All ({issues.length})
-              </button>
-              <button
-                onClick={() => setStatusFilter('READY')}
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition ${
-                  statusFilter === 'READY' ? 'bg-slate-800 text-teal-400 shadow-sm' : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                Ready
-              </button>
-              <button
-                onClick={() => setStatusFilter('WAITING')}
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition ${
-                  statusFilter === 'WAITING' ? 'bg-slate-800 text-teal-400 shadow-sm' : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                Waiting Info
-              </button>
-              <button
-                onClick={() => setStatusFilter('INVESTIGATED')}
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition ${
-                  statusFilter === 'INVESTIGATED' ? 'bg-slate-800 text-teal-400 shadow-sm' : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                Investigated
-              </button>
+          )}
+        </Card>
+        <Card className="p-4">
+          <h3 className="mb-3 text-sm font-semibold text-ink">Analysis status</h3>
+          {analysisData.length === 0 ? (
+            <EmptyState title="No investigations yet" description="Start an investigation from an issue workspace." />
+          ) : (
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={analysisData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--jp-line)" />
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="var(--jp-muted)" />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 10 }} stroke="var(--jp-muted)" />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#3b5ccc" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-          </div>
+          )}
+        </Card>
+      </div>
 
-          <div className="text-xs text-slate-400 flex items-center space-x-1">
-            <span>Showing</span>
-            <span className="font-bold text-white">{filteredIssues.length}</span>
-            <span>tickets</span>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Card className="p-4">
+          <h3 className="mb-3 text-sm font-semibold text-ink">Investigation activity</h3>
+          {timeline.length === 0 ? (
+            <EmptyState title="No audit events yet" description="Activity appears after validation or investigation runs." />
+          ) : (
+            <ol className="space-y-3">
+              {timeline.map(({ issue, event }) => (
+                <li key={`${issue.jiraKey}-${event.id}`}>
+                  <button type="button" className="w-full text-left" onClick={() => onSelectIssue(issue.jiraKey)}>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono text-xs font-semibold text-accent">{issue.jiraKey}</span>
+                      <span className="text-[11px] text-muted">{formatDateTime(event.timestamp)}</span>
+                    </div>
+                    <p className="text-xs text-ink">{event.eventType}</p>
+                    <p className="text-[11px] text-muted">{event.details}</p>
+                  </button>
+                </li>
+              ))}
+            </ol>
+          )}
+        </Card>
+        <Card className="p-4">
+          <h3 className="mb-3 text-sm font-semibold text-ink">Needs attention</h3>
+          {attention.length === 0 ? (
+            <EmptyState title="No blocking items" description="Issues currently have a clear next action or are waiting on analysis." />
+          ) : (
+            <ul className="space-y-2">
+              {attention.map((item, idx) => (
+                <li key={`${item.key}-${idx}`}>
+                  <button type="button" className="flex w-full items-center justify-between rounded-md border border-line px-3 py-2 text-left hover:bg-surface-2" onClick={() => onSelectIssue(item.key)}>
+                    <span className="text-xs text-ink">{item.title}</span>
+                    <span className="text-[11px] text-accent">{item.action}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </div>
 
-        {/* Table Content */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-950 text-slate-400 uppercase tracking-wider text-[11px] border-b border-slate-800">
-              <tr>
-                <th className="py-3.5 px-4 font-semibold">Jira Key</th>
-                <th className="py-3.5 px-4 font-semibold">Summary</th>
-                <th className="py-3.5 px-4 font-semibold">Reporter</th>
-                <th className="py-3.5 px-4 font-semibold">Readiness</th>
-                <th className="py-3.5 px-4 font-semibold">Status</th>
-                <th className="py-3.5 px-4 font-semibold">Affected Service</th>
-                <th className="py-3.5 px-4 font-semibold">Probable Root Cause</th>
-                <th className="py-3.5 px-4 font-semibold">AI Confidence</th>
-                <th className="py-3.5 px-4 font-semibold text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60 text-slate-300">
-              {filteredIssues.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="py-8 text-center text-slate-500">
-                    No tickets found matching current filters. Click "Simulate Jira Issue" or "Load Demo Data" above.
-                  </td>
-                </tr>
-              ) : (
-                filteredIssues.map((issue) => {
-                  const isReady = issue.status === 'READY';
-                  const isWaiting = issue.status === 'WAITING_FOR_INFORMATION';
-                  const isInvestigated = issue.status === 'INVESTIGATED' || issue.investigationStatus === 'COMPLETED';
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card className="p-4">
+          <h3 className="mb-3 text-sm font-semibold text-ink">Recently identified API errors</h3>
+          {apiErrors.length === 0 ? (
+            <EmptyState title="No extracted API errors" description="Upload or ingest a log attachment to extract endpoints and HTTP status codes." />
+          ) : (
+            <ul className="space-y-2 text-xs">
+              {apiErrors.map(({ issue, att }) => (
+                <li key={att.id}>
+                  <button type="button" className="w-full text-left" onClick={() => onSelectIssue(issue.jiraKey)}>
+                    <div className="font-mono text-accent">{att.primaryEndpoint}</div>
+                    <div className="text-muted">HTTP {att.primaryStatus} · {issue.jiraKey}</div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+        <Card className="p-4">
+          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink">
+            <GitBranch className="h-4 w-4 text-accent" />
+            Repository recommendations
+          </h3>
+          {repos.length === 0 ? (
+            <EmptyState title="No verified repository matches yet" description="Review the service catalog or analyze a log attachment to match an approved repository." />
+          ) : (
+            <ul className="space-y-2 text-xs">
+              {repos.map(({ issue, att }) => (
+                <li key={att.id} className="rounded-md border border-line px-3 py-2">
+                  <div className="font-medium text-ink">{att.recommendedRepo}</div>
+                  <div className="text-muted">{issue.jiraKey} · {att.primaryEndpoint || 'endpoint pending'}</div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+        <Card className="p-4">
+          <h3 className="mb-3 text-sm font-semibold text-ink">Integration health</h3>
+          <ul className="space-y-2 text-xs">
+            <li className="flex items-center justify-between">
+              <span>Orchestrator backend</span>
+              <StatusBadge tone={backendReachable ? 'success' : 'danger'}>{backendReachable ? 'Reachable' : 'Unreachable'}</StatusBadge>
+            </li>
+            <li className="flex items-center justify-between">
+              <span>Jira mode</span>
+              <StatusBadge tone="warning">{demoMode ? 'Demo' : backendReachable ? 'Live config' : 'Unknown'}</StatusBadge>
+            </li>
+            <li className="flex items-center justify-between">
+              <span>AI provider</span>
+              <StatusBadge tone={aiConfigured ? 'success' : 'warning'}>{aiConfigured ? 'Configured' : 'Fallback'}</StatusBadge>
+            </li>
+          </ul>
+          <p className="mt-3 text-[11px] text-muted">Indicators reflect backend health and configuration, not assumed connectivity.</p>
+        </Card>
+      </div>
 
-                  return (
-                    <tr
-                      key={issue.id || issue.jiraKey}
-                      onClick={() => onSelectIssue(issue.jiraKey)}
-                      className="hover:bg-slate-850/80 cursor-pointer transition group"
-                    >
-                      <td className="py-3.5 px-4 font-mono font-bold text-teal-400">
-                        {issue.jiraKey}
-                      </td>
-                      <td className="py-3.5 px-4 font-medium text-white max-w-xs truncate">
-                        {issue.summary}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-400 truncate max-w-[120px]">
-                        {issue.reporter || 'engineer@jira.com'}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center space-x-2">
-                          <span className={`font-mono font-bold ${
-                            (issue.readinessScore || 0) >= 80 ? 'text-emerald-400' :
-                            (issue.readinessScore || 0) >= 60 ? 'text-amber-400' : 'text-rose-400'
-                          }`}>
-                            {issue.readinessScore != null ? `${issue.readinessScore}%` : 'N/A'}
-                          </span>
-                          <div className="w-12 bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full ${
-                                (issue.readinessScore || 0) >= 80 ? 'bg-emerald-500' :
-                                (issue.readinessScore || 0) >= 60 ? 'bg-amber-500' : 'bg-rose-500'
-                              }`}
-                              style={{ width: `${issue.readinessScore || 0}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                          isInvestigated ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' :
-                          isReady ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                          isWaiting ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
-                          'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                        }`}>
-                          {issue.status.replace(/_/g, ' ')}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 font-semibold text-slate-300">
-                        {issue.affectedService ? (
-                          <span className="bg-slate-800 px-2 py-0.5 rounded text-[11px] font-mono border border-slate-700">
-                            {issue.affectedService}
-                          </span>
-                        ) : (
-                          <span className="text-slate-600">—</span>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-400 max-w-xs truncate">
-                        {issue.probableRootCause || <span className="text-slate-600 italic">Pending investigation</span>}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        {issue.aiConfidence ? (
-                          <span className="font-mono text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                            {issue.aiConfidence}%
-                          </span>
-                        ) : (
-                          <span className="text-slate-600">—</span>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onSelectIssue(issue.jiraKey);
-                          }}
-                          className="inline-flex items-center space-x-1 text-slate-400 group-hover:text-teal-400 transition"
-                        >
-                          <span>Inspect</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+      <div>
+        <h3 className="mb-3 text-sm font-semibold text-ink">Recent Jira issues</h3>
+        <IssueTable
+          issues={issues}
+          onSelectIssue={onSelectIssue}
+          filter={filter}
+          onFilterChange={onFilterChange}
+          search={search}
+          loading={loading}
+        />
       </div>
     </div>
   );

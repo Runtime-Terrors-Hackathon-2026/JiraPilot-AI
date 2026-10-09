@@ -1,3 +1,14 @@
+export type AppView =
+  | 'overview'
+  | 'issues'
+  | 'logs'
+  | 'repos'
+  | 'knowledge'
+  | 'notifications'
+  | 'settings';
+
+export type IssueFilter = 'ALL' | 'WAITING' | 'READY' | 'INVESTIGATING' | 'INVESTIGATED';
+
 export type IssueStatus = 'OPEN' | 'WAITING_FOR_INFORMATION' | 'READY' | 'INVESTIGATING' | 'INVESTIGATED' | 'RESOLVED';
 export type InvestigationStatus = 'NOT_STARTED' | 'RUNNING' | 'COMPLETED' | 'FAILED';
 export type ConfidenceLevel = 'HIGH' | 'MEDIUM' | 'LOW';
@@ -167,6 +178,14 @@ export interface IssueAttachment {
   emailSent: boolean;
   createdAt: string;
   analyzedAt?: string;
+}
+
+export interface BackendHealth {
+  status: string;
+  service: string;
+  demoMode: boolean;
+  aiServiceUrl: string;
+  timestamp: number;
 }
 
 export interface NvidiaStatus {

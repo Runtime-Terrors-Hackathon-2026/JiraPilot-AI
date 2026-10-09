@@ -5,7 +5,9 @@ import {
   PolicySettings,
   MockEmail,
   ValidationResult,
-  InvestigationResult
+  InvestigationResult,
+  BackendHealth,
+  NvidiaStatus
 } from '../types';
 
 const API_BASE = '/api';
@@ -195,7 +197,13 @@ export const api = {
     return res.json();
   },
 
-  async getNvidiaStatus(): Promise<any> {
+  async getHealth(): Promise<BackendHealth> {
+    const res = await fetch(`${API_BASE}/health`);
+    if (!res.ok) throw new Error('Backend health check failed');
+    return res.json();
+  },
+
+  async getNvidiaStatus(): Promise<NvidiaStatus> {
     try {
       const res = await fetch('http://localhost:8000/api/v1/nvidia/status');
       if (res.ok) return res.json();
@@ -205,7 +213,9 @@ export const api = {
       enabled: false,
       configured: false,
       activeMode: 'deterministic_fallback',
-      model: 'meta/llama-3.1-70b-instruct'
+      model: 'unconfigured',
+      baseUrl: '',
+      timeoutSeconds: 0,
     };
   },
 

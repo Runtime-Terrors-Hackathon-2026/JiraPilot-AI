@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { PlayCircle } from 'lucide-react';
 import { JiraIssue } from '../types';
 import { api } from '../api/client';
-import { X, PlayCircle, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Button, Dialog } from './ui/primitives';
+import { useToast } from './ui/Toast';
 
 interface SimulateModalProps {
   isOpen: boolean;
@@ -10,6 +12,7 @@ interface SimulateModalProps {
 }
 
 export const SimulateModal: React.FC<SimulateModalProps> = ({ isOpen, onClose, onSuccess }) => {
+  const { push } = useToast();
   const [key, setKey] = useState('HACK-1001');
   const [summary, setSummary] = useState('Circuit creation API failing');
   const [description, setDescription] = useState('Circuit creation fails intermittently during provisioning in SANDBOX environment.');
@@ -22,8 +25,6 @@ export const SimulateModal: React.FC<SimulateModalProps> = ({ isOpen, onClose, o
   const [expectedBehavior, setExpectedBehavior] = useState('HTTP 201 Created and active circuit record created');
   const [actualBehavior, setActualBehavior] = useState('HTTP 500 with SQL unique constraint error');
   const [loading, setLoading] = useState(false);
-
-  if (!isOpen) return null;
 
   const loadPreset = (presetType: 'complete' | 'incomplete' | 'timeout') => {
     if (presetType === 'complete') {
@@ -50,7 +51,7 @@ export const SimulateModal: React.FC<SimulateModalProps> = ({ isOpen, onClose, o
       setErrorMessage('');
       setExpectedBehavior('');
       setActualBehavior('');
-    } else if (presetType === 'timeout') {
+    } else {
       setKey('HACK-1003');
       setSummary('Work Order dispatch timeout when calling Inventory Service');
       setDescription('High latency and 504 Gateway Timeout during peak dispatch requests.');
@@ -65,207 +66,66 @@ export const SimulateModal: React.FC<SimulateModalProps> = ({ isOpen, onClose, o
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const issue = await api.simulateIssue({
-        key,
-        summary,
-        description,
-        reporter,
-        environment,
-        apiDetails,
-        logs,
-        requestPayload,
-        errorMessage,
-        expectedBehavior,
-        actualBehavior,
-      });
-      onSuccess(issue);
-      onClose();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const field = (label: string, value: string, onChange: (v: string) => void, extra?: string) => (
+    <label className="block text-xs font-medium text-ink">
+      {label}
+      {extra === 'textarea' ? (
+        <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={3} className="mt-1 w-full rounded-md border border-line bg-canvas px-3 py-2 font-mono text-xs text-ink" />
+      ) : (
+        <input value={value} onChange={(e) => onChange(e.target.value)} className="mt-1 h-9 w-full rounded-md border border-line bg-canvas px-3 text-sm text-ink" />
+      )}
+    </label>
+  );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-850">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-lg bg-teal-500/10 text-teal-400 border border-teal-500/20">
-              <PlayCircle className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-white">Simulate Jira Issue Ingestion</h2>
-              <p className="text-xs text-slate-400">Trigger real-time validation, triage readiness scoring, and automated RCA pipeline</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
-            <X className="w-5 h-5" />
-          </button>
+    <Dialog open={isOpen} onClose={onClose} title="Simulate Jira issue" description="Ingest a synthetic ticket through the real validation pipeline" icon={PlayCircle} wide>
+      <form
+        className="space-y-4 p-5"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          setLoading(true);
+          try {
+            const issue = await api.simulateIssue({
+              key, summary, description, reporter, environment, apiDetails, logs, requestPayload, errorMessage, expectedBehavior, actualBehavior,
+            });
+            onSuccess(issue);
+            onClose();
+          } catch {
+            push({ kind: 'error', title: 'Simulation failed', message: 'The backend rejected the simulate-issue request.' });
+          } finally {
+            setLoading(false);
+          }
+        }}
+      >
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" size="sm" onClick={() => loadPreset('complete')}>Complete ticket</Button>
+          <Button type="button" size="sm" onClick={() => loadPreset('incomplete')}>Needs information</Button>
+          <Button type="button" size="sm" onClick={() => loadPreset('timeout')}>Downstream timeout</Button>
         </div>
-
-        {/* Preset Selector */}
-        <div className="px-6 py-3 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
-          <span className="text-xs font-medium text-slate-400">Demo Scenario Presets:</span>
-          <div className="flex space-x-2">
-            <button
-              type="button"
-              onClick={() => loadPreset('complete')}
-              className="px-2.5 py-1 rounded bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 border border-teal-500/30 text-xs font-semibold"
-            >
-              1. Complete (Duplicate NFID)
-            </button>
-            <button
-              type="button"
-              onClick={() => loadPreset('incomplete')}
-              className="px-2.5 py-1 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold"
-            >
-              2. Incomplete (Needs Info)
-            </button>
-            <button
-              type="button"
-              onClick={() => loadPreset('timeout')}
-              className="px-2.5 py-1 rounded bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 text-xs font-semibold"
-            >
-              3. Downstream Timeout
-            </button>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          {field('Jira key', key, setKey)}
+          <div className="md:col-span-2">{field('Summary', summary, setSummary)}</div>
+        </div>
+        {field('Description', description, setDescription, 'textarea')}
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          {field('Reporter', reporter, setReporter)}
+          {field('Environment', environment, setEnvironment)}
+          {field('API endpoint', apiDetails, setApiDetails)}
+        </div>
+        {field('Logs', logs, setLogs, 'textarea')}
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {field('Request payload', requestPayload, setRequestPayload, 'textarea')}
+          <div className="space-y-3">
+            {field('Expected behavior', expectedBehavior, setExpectedBehavior)}
+            {field('Actual behavior', actualBehavior, setActualBehavior)}
+            {field('Error message', errorMessage, setErrorMessage)}
           </div>
         </div>
-
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[60vh] space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Jira Key</label>
-              <input
-                type="text"
-                value={key}
-                onChange={(e) => setKey(e.target.value)}
-                required
-                className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-teal-500 font-mono"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Summary</label>
-              <input
-                type="text"
-                value={summary}
-                onChange={(e) => setSummary(e.target.value)}
-                required
-                className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-teal-500"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">Issue Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-              required
-              className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-teal-500 font-sans"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Reporter Email</label>
-              <input
-                type="email"
-                value={reporter}
-                onChange={(e) => setReporter(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-teal-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Environment</label>
-              <input
-                type="text"
-                value={environment}
-                onChange={(e) => setEnvironment(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-teal-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">API Endpoint</label>
-              <input
-                type="text"
-                value={apiDetails}
-                onChange={(e) => setApiDetails(e.target.value)}
-                placeholder="POST /api/circuit/provision"
-                className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-teal-500 font-mono"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">Application / Server Logs</label>
-            <textarea
-              value={logs}
-              onChange={(e) => setLogs(e.target.value)}
-              rows={3}
-              placeholder="Paste log traces here..."
-              className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-teal-500 font-mono"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Request Payload (JSON)</label>
-              <textarea
-                value={requestPayload}
-                onChange={(e) => setRequestPayload(e.target.value)}
-                rows={3}
-                placeholder="Paste JSON body..."
-                className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-teal-500 font-mono"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Expected vs Actual Behavior</label>
-              <input
-                type="text"
-                value={expectedBehavior}
-                onChange={(e) => setExpectedBehavior(e.target.value)}
-                placeholder="Expected Behavior"
-                className="w-full mb-2 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-teal-500"
-              />
-              <input
-                type="text"
-                value={actualBehavior}
-                onChange={(e) => setActualBehavior(e.target.value)}
-                placeholder="Actual Behavior"
-                className="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-teal-500"
-              />
-            </div>
-          </div>
-
-          {/* Footer Actions */}
-          <div className="pt-4 border-t border-slate-800 flex justify-end space-x-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-5 py-2 rounded-lg text-xs font-semibold bg-teal-600 hover:bg-teal-500 text-white shadow-lg shadow-teal-600/30 transition flex items-center space-x-2"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>{loading ? 'Ingesting...' : 'Ingest & Trigger AI Triage'}</span>
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="flex justify-end gap-2">
+          <Button type="button" onClick={onClose}>Cancel</Button>
+          <Button type="submit" variant="primary" disabled={loading}>{loading ? 'Ingesting…' : 'Ingest and validate'}</Button>
+        </div>
+      </form>
+    </Dialog>
   );
 };
