@@ -42,7 +42,7 @@ public class LogAttachmentService {
     @Value("${jirapilot.ai-service-url:http://localhost:8000}")
     private String aiServiceUrl;
 
-    @Value("${jirapilot.jira.auto-comment-enabled:false}")
+    @Value("${jirapilot.jira.auto-comment-enabled:true}")
     private boolean autoCommentEnabled;
 
     @Value("${jirapilot.max-attachment-size-bytes:10485760}") // 10MB default

@@ -29,37 +29,27 @@ public class AttachmentController {
     private final JiraCommentTemplateService commentTemplateService;
     private final EmailJsService emailJsService;
 
-    @PostMapping("/issues/{key}/attachments/upload")
-    public ResponseEntity<?> uploadAttachment(
+    @PostMapping(value = "/issues/{key}/attachments/upload", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadAttachmentFile(
             @PathVariable String key,
-            @RequestParam(value = "file", required = false) MultipartFile file,
-            @RequestBody(required = false) Map<String, String> bodyPayload
+            @RequestParam("file") MultipartFile file
     ) {
         JiraIssue issue = issueRepository.findByJiraKey(key)
-                .orElseThrow(() -> new IllegalArgumentException("Issue with key " + key + " not found."));
+                .orElseGet(() -> issueRepository.save(JiraIssue.builder()
+                        .jiraKey(key)
+                        .summary("Issue " + key)
+                        .status(com.jirapilot.model.enums.IssueStatus.OPEN)
+                        .build()));
 
-        byte[] bytes;
-        String filename;
-        String mimeType;
-
-        if (file != null && !file.isEmpty()) {
-            try {
-                bytes = file.getBytes();
-                filename = file.getOriginalFilename();
-                mimeType = file.getContentType();
-            } catch (Exception e) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Failed to read uploaded file: " + e.getMessage()));
-            }
-        } else if (bodyPayload != null && bodyPayload.containsKey("logText")) {
-            String text = bodyPayload.get("logText");
-            bytes = text.getBytes(StandardCharsets.UTF_8);
-            filename = bodyPayload.getOrDefault("filename", "pasted_telemetry.log");
-            mimeType = "text/plain";
-        } else {
-            return ResponseEntity.badRequest().body(Map.of("error", "Please provide a log file or 'logText' payload."));
+        if (file == null || file.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Uploaded file is empty."));
         }
 
         try {
+            byte[] bytes = file.getBytes();
+            String filename = file.getOriginalFilename();
+            String mimeType = file.getContentType();
+
             IssueAttachment attachment = attachmentService.processLogContent(
                     issue,
                     filename,
@@ -72,6 +62,49 @@ public class AttachmentController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             log.error("[ATTACHMENT CONTROLLER] Internal error processing log: ", e);
+            return ResponseEntity.internalServerError().body(Map.of("error", "Processing failed: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping(value = {"/issues/{key}/attachments/upload", "/issues/{key}/attachments/paste"}, consumes = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> uploadAttachmentText(
+            @PathVariable String key,
+            @RequestBody Map<String, Object> bodyPayload
+    ) {
+        JiraIssue issue = issueRepository.findByJiraKey(key)
+                .orElseGet(() -> issueRepository.save(JiraIssue.builder()
+                        .jiraKey(key)
+                        .summary("Issue " + key)
+                        .status(com.jirapilot.model.enums.IssueStatus.OPEN)
+                        .build()));
+
+        if (bodyPayload == null || !bodyPayload.containsKey("logText")) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Please provide a 'logText' payload."));
+        }
+
+        try {
+            Object rawLog = bodyPayload.get("logText");
+            String text;
+            if (rawLog instanceof Map<?, ?> map && map.containsKey("value")) {
+                text = String.valueOf(map.get("value"));
+            } else {
+                text = String.valueOf(rawLog);
+            }
+            byte[] bytes = text.getBytes(StandardCharsets.UTF_8);
+            String filename = String.valueOf(bodyPayload.getOrDefault("filename", "pasted_telemetry.log"));
+
+            IssueAttachment attachment = attachmentService.processLogContent(
+                    issue,
+                    filename,
+                    bytes,
+                    "text/plain",
+                    null
+            );
+            return ResponseEntity.ok(attachment);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            log.error("[ATTACHMENT CONTROLLER] Internal error processing log text: ", e);
             return ResponseEntity.internalServerError().body(Map.of("error", "Processing failed: " + e.getMessage()));
         }
     }

@@ -46,7 +46,7 @@ jirapilot:
     email: ${JIRA_EMAIL:sshankaran202@gmail.com}
     api-token: ${JIRA_API_TOKEN:ATATT3xFfGF0V77ibTMyupkU2ZKioID2ObfgWyPKkIZTuzgbB3kLmfZ3dHFxCPtrrfvPqHgt4YAkWFKKa9OvlrpT2X94hnQOgDOBDjdP8XbB-BIL0jL4n_0reX8dthFpoY41KLi15Lr7e-RRpi8V0T4iViKMdKhiwgb9FORjTB-ctGG3TtN4Sjc=B408196B}
     project-key: ${JIRA_PROJECT_KEY:KAN}
-    auto-comment-enabled: ${JIRA_AUTO_COMMENT_ENABLED:false}
+    auto-comment-enabled: ${JIRA_AUTO_COMMENT_ENABLED:true}
   emailjs:
     enabled: ${EMAILJS_ENABLED:false}
     service-id: ${EMAILJS_SERVICE_ID:service_jirapilot}
