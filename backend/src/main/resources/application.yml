@@ -36,7 +36,7 @@ spring:
             enable: true
 
 jirapilot:
-  demo-mode: ${DEMO_MODE:false}
+  demo-mode: ${DEMO_MODE:true}
   ai-service-url: ${AI_SERVICE_URL:http://localhost:8000}
   email-notifications-enabled: ${EMAIL_ENABLED:true}
   max-attachment-size-bytes: ${MAX_ATTACHMENT_SIZE_BYTES:10485760}

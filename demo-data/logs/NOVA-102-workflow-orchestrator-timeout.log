@@ -1,0 +1,12 @@
+2026-10-09 11:05:01.100 [saga-pool-2] INFO  c.n.workflow.engine.SagaStepExecutor - [corrId=CORR-DEMO-1002] Initiating Saga step 2: RESERVE_NETWORK_RESOURCE for sagaId=SAGA-99120
+2026-10-09 11:05:01.115 [saga-pool-2] DEBUG c.n.workflow.client.InventoryClient - [corrId=CORR-DEMO-1002] Dispatching POST http://resource-inventory-service:8080/api/v1/resources/allocate
+2026-10-09 11:05:04.120 [saga-pool-2] WARN  c.n.workflow.client.InventoryClient - [corrId=CORR-DEMO-1002] Upstream latency exceeded warning threshold (3000ms), still awaiting socket response...
+2026-10-09 11:05:06.125 [saga-pool-2] ERROR c.n.workflow.engine.SagaStepExecutor - [corrId=CORR-DEMO-1002] Saga step failed due to downstream communication breakdown
+org.springframework.web.client.ResourceAccessException: I/O error on POST request for "http://resource-inventory-service:8080/api/v1/resources/allocate": Read timed out
+	at org.springframework.web.client.RestTemplate.doExecute(RestTemplate.java:891)
+	at com.northstar.workflow.client.InventoryClient.allocateResource(InventoryClient.java:76)
+	at com.northstar.workflow.engine.SagaStepExecutor.executeStep(SagaStepExecutor.java:114)
+	at com.northstar.workflow.service.WorkflowService.processWorkflow(WorkflowService.java:62)
+Caused by: java.net.SocketTimeoutException: Read timed out after 5000ms
+	at java.base/sun.nio.ch.NioSocketImpl.timedRead(NioSocketImpl.java:278)
+2026-10-09 11:05:06.130 [saga-pool-2] ERROR c.n.workflow.service.WorkflowService - [corrId=CORR-DEMO-1002] SAGA transaction aborted with HTTP 504 Gateway Timeout. Triggering compensating transactions.

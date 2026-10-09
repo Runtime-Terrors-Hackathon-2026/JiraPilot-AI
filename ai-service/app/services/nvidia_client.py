@@ -97,7 +97,8 @@ Analyze the failure above and output strictly the required JSON object."""
     endpoint = f"{settings.NVIDIA_BASE_URL.rstrip('/')}/chat/completions"
 
     try:
-        async with httpx.AsyncClient(timeout=float(settings.NVIDIA_TIMEOUT_SECONDS)) as client:
+        timeout_cfg = httpx.Timeout(float(settings.NVIDIA_TIMEOUT_SECONDS), connect=2.5)
+        async with httpx.AsyncClient(timeout=timeout_cfg) as client:
             response = await client.post(endpoint, headers=headers, json=payload)
             if response.status_code == 200:
                 data = response.json()
