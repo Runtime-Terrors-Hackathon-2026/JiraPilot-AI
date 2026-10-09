@@ -14,11 +14,16 @@ public class JiraClientFactory {
     @Value("${jirapilot.demo-mode:true}")
     private boolean demoMode;
 
+    @Value("${jirapilot.jira.base-url:}")
+    private String baseUrl;
+
+    @Value("${jirapilot.jira.api-token:}")
+    private String apiToken;
+
     public JiraClient getClient() {
-        if (demoMode) {
-            return applicationContext.getBean("demoJiraClient", JiraClient.class);
-        } else {
+        if (baseUrl != null && !baseUrl.isBlank() && apiToken != null && !apiToken.isBlank()) {
             return applicationContext.getBean("atlassianJiraClient", JiraClient.class);
         }
+        return applicationContext.getBean("demoJiraClient", JiraClient.class);
     }
 }

@@ -22,6 +22,7 @@ public class IssueService {
     private final TriageWorkflowService workflowService;
     private final EmailNotificationService emailService;
     private final AuditService auditService;
+    private final LogAttachmentService attachmentService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Transactional(readOnly = true)
@@ -57,16 +58,41 @@ public class IssueService {
         return workflowService.runInvestigationWorkflow(issue);
     }
 
-    @Transactional
     public List<IssueResponseDto> syncJiraProject(String projectKey) {
         log.info("[JIRA SYNC] Initiating synchronization for Jira project {}", projectKey);
-        List<String> keys = workflowService.getJiraClientFactory().getClient().getProjectIssueKeys(projectKey);
+        var client = workflowService.getJiraClientFactory().getClient();
+        List<String> keys = client.getProjectIssueKeys(projectKey);
         List<IssueResponseDto> results = new ArrayList<>();
         for (String key : keys) {
             try {
-                CreateIssueRequest req = workflowService.getJiraClientFactory().getClient().getIssue(key);
+                CreateIssueRequest req = client.getIssue(key);
                 if (req != null && req.getKey() != null) {
-                    results.add(createOrUpdateIssue(req));
+                    IssueResponseDto dto = createOrUpdateIssue(req);
+                    results.add(dto);
+
+                    // Fetch and ingest any attachments attached to the live Jira issue
+                    try {
+                        var issueEntity = issueRepository.findByJiraKey(key).orElse(null);
+                        if (issueEntity != null) {
+                            var attachments = client.getIssueAttachments(key);
+                            for (var att : attachments) {
+                                String filename = att.get("filename");
+                                String contentUrl = att.get("contentUrl");
+                                String attId = att.get("id");
+                                String mimeType = att.get("mimeType");
+
+                                if (filename != null && (filename.endsWith(".log") || filename.endsWith(".txt") || filename.endsWith(".json") || filename.endsWith(".gz"))) {
+                                    log.info("[JIRA SYNC] Ingesting attachment '{}' for synced issue {}", filename, key);
+                                    byte[] bytes = client.getAttachmentBytes(contentUrl);
+                                    if (bytes != null && bytes.length > 0) {
+                                        attachmentService.processLogContent(issueEntity, filename, bytes, mimeType, attId);
+                                    }
+                                }
+                            }
+                        }
+                    } catch (Exception attEx) {
+                        log.warn("[JIRA SYNC] Could not ingest attachments for {}: {}", key, attEx.getMessage());
+                    }
                 }
             } catch (Exception e) {
                 log.warn("[JIRA SYNC] Failed to sync issue {}: {}", key, e.getMessage());

@@ -61,7 +61,10 @@ public class AtlassianJiraClient implements JiraClient {
                     description = sb.toString().trim();
                 }
 
-                String reporter = fields.path("reporter").path("emailAddress").asText("sshankaran202@gmail.com");
+                String reporter = fields.path("reporter").path("emailAddress").asText("");
+                if (reporter.isBlank()) {
+                    reporter = fields.path("reporter").path("displayName").asText("sshankaran202@gmail.com");
+                }
 
                 return CreateIssueRequest.builder()
                         .key(key)
@@ -126,9 +129,13 @@ public class AtlassianJiraClient implements JiraClient {
     public List<String> getProjectIssueKeys(String projectKey) {
         List<String> keys = new ArrayList<>();
         try {
-            String url = baseUrl.replaceAll("/+$", "") + "/rest/api/3/search/jql?jql=project=" + projectKey;
-            HttpEntity<Void> request = new HttpEntity<>(createAuthHeaders());
-            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, request, String.class);
+            String url = baseUrl.replaceAll("/+$", "") + "/rest/api/3/search/jql";
+            Map<String, Object> body = Map.of(
+                    "jql", "project = '" + projectKey + "' order by created desc",
+                    "fields", List.of("key", "summary", "id")
+            );
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, createAuthHeaders());
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 JsonNode root = objectMapper.readTree(response.getBody());
                 JsonNode issues = root.path("issues");
@@ -138,7 +145,6 @@ public class AtlassianJiraClient implements JiraClient {
                         if (k != null && !k.isBlank()) {
                             keys.add(k);
                         } else if (node.has("id")) {
-                            // fetch key by id
                             String id = node.path("id").asText();
                             CreateIssueRequest detailed = getIssue(id);
                             if (detailed != null && detailed.getKey() != null) {
