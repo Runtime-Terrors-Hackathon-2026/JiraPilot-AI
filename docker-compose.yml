@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: jirapilot-postgres
+    environment:
+      POSTGRES_DB: jirapilot
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: jirapilot-ai-service
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - DEMO_MODE=true
+      - AI_PROVIDER=deterministic
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  java-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: jirapilot-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/jirapilot
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=postgrespassword
+      - AI_SERVICE_URL=http://ai-service:8000
+      - DEMO_MODE=true
+      - EMAIL_ENABLED=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ai-service:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: jirapilot-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - java-backend
+
+volumes:
+  postgres_data:

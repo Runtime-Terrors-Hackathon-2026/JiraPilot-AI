@@ -1,0 +1,674 @@
+"""
+Synthetic Incident Generator for JiraPilot AI (Northstar Digital Systems)
+Generates >= 20 realistic synthetic incident records and sample logs under the fictional NOVA project key.
+Strictly public-safe and synthetic.
+"""
+
+import json
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+DEMO_DATA_DIR = BASE_DIR / "demo-data"
+LOGS_DIR = DEMO_DATA_DIR / "logs"
+
+INCIDENTS = [
+    {
+        "ticketKey": "NOVA-101",
+        "title": "HTTP 409 Conflict: Duplicate synthetic resource ID during virtual circuit allocation",
+        "service": "resource-inventory-service",
+        "environment": "staging",
+        "statusCode": 409,
+        "scenarioType": "DUPLICATE_RESOURCE_ID",
+        "isComplete": True,
+        "readinessScore": 95.0,
+        "reporterEmail": "demo-operator-01@northstar.example.com",
+        "description": "Attempting to allocate virtual circuit DEMO-RESOURCE-1001 resulted in a 409 Conflict error. The database reports a primary key collision on synthetic resource identifier.",
+        "apiDetails": "POST /api/v1/resources/allocate (Host: resource-inventory-service.internal.northstar.example.com:8084)",
+        "logs": (
+            "2026-10-09T08:14:22.102Z [http-nio-8084-exec-3] WARN  c.n.inventory.service.ResourceAllocationService "
+            "- [corrId=CORR-DEMO-1001, traceId=trace-demo-88102] Resource ID DEMO-RESOURCE-1001 already reserved for site SITE-NYC-01.\n"
+            "org.springframework.dao.DataIntegrityViolationException: Pre-existing allocation detected for resource ID: DEMO-RESOURCE-1001\n"
+            "\tat com.northstar.inventory.repository.JpaResourceRepository.save(JpaResourceRepository.java:94)\n"
+            "\tat com.northstar.inventory.service.ResourceAllocationService.reserveCircuit(ResourceAllocationService.java:142)"
+        ),
+        "requestPayload": '{"resourceType": "VIRTUAL_CIRCUIT", "siteId": "SITE-NYC-01", "requestedCapacityGbps": 10, "resourceId": "DEMO-RESOURCE-1001"}',
+        "responsePayload": '{"error": "RESOURCE_ALREADY_EXISTS", "message": "Resource DEMO-RESOURCE-1001 already allocated", "status": 409}',
+        "errorMessage": "DataIntegrityViolationException: Pre-existing allocation detected for resource ID: DEMO-RESOURCE-1001",
+        "expectedBehavior": "Resource allocation should either generate a distinct synthetic ID or return idempotency confirmation.",
+        "actualBehavior": "Returns HTTP 409 and halts the workflow orchestrator pipeline.",
+        "replicationSteps": "1. Post resource allocation payload with resourceId DEMO-RESOURCE-1001 to /api/v1/resources/allocate.\n2. Observe HTTP 409 Conflict.",
+        "correlationId": "CORR-DEMO-1001",
+        "probableRootCause": "Concurrency race condition or lack of deterministic UUID generation causing resourceId collision on retry.",
+        "resolution": "Enable UUIDv4 random generator for synthetic resource allocation and implement optimistic locking."
+    },
+    {
+        "ticketKey": "NOVA-102",
+        "title": "HTTP 504 Gateway Timeout: Downstream timeout in workflow-orchestrator calling inventory",
+        "service": "workflow-orchestrator",
+        "environment": "production-simulation",
+        "statusCode": 504,
+        "scenarioType": "DOWNSTREAM_TIMEOUT",
+        "isComplete": True,
+        "readinessScore": 100.0,
+        "reporterEmail": "demo-sre-02@northstar.example.com",
+        "description": "Workflow execution WF-EXEC-5021 failed after 30 seconds waiting on resource-inventory-service. SAGA compensation triggered.",
+        "apiDetails": "POST /api/v1/workflows/start (Host: workflow-orchestrator.internal.northstar.example.com:8082)",
+        "logs": (
+            "2026-10-09T08:22:15.890Z [orchestrator-worker-4] ERROR c.n.workflow.engine.SagaStepExecutor "
+            "- [corrId=CORR-DEMO-1002, traceId=trace-demo-99231] Step ALLOCATE_IP timed out after 30000ms calling http://resource-inventory-service:8084/api/v1/resources/allocate\n"
+            "java.net.http.HttpTimeoutException: request timed out\n"
+            "\tat com.northstar.workflow.client.InventoryClient.allocateResource(InventoryClient.java:78)\n"
+            "\tat com.northstar.workflow.engine.SagaStepExecutor.executeStep(SagaStepExecutor.java:112)"
+        ),
+        "requestPayload": '{"workflowType": "CIRCUIT_LIFECYCLE", "initiatorId": "REQ-DEMO-9001", "steps": ["VALIDATE", "ALLOCATE_IP"]}',
+        "responsePayload": '{"error": "GATEWAY_TIMEOUT", "message": "Downstream inventory service did not reply within 30000ms", "status": 504}',
+        "errorMessage": "java.net.http.HttpTimeoutException: request timed out",
+        "expectedBehavior": "Downstream call completes within 1500ms or fails fast with circuit breaker fallback.",
+        "actualBehavior": "Blocks thread for 30 seconds before timing out.",
+        "replicationSteps": "1. Trigger workflow WF-EXEC-5021 during peak simulated traffic.\n2. Observe 30s delay and 504 status.",
+        "correlationId": "CORR-DEMO-1002",
+        "probableRootCause": "Thread pool exhaustion on resource-inventory-service and missing Resilience4j timeout circuit breaker.",
+        "resolution": "Set HTTP client connect/read timeout to 5000ms with Resilience4j circuit breaker fallback."
+    },
+    {
+        "ticketKey": "NOVA-103",
+        "title": "Circuit provisioning fails randomly",
+        "service": "service-request-api",
+        "environment": "staging",
+        "statusCode": 500,
+        "scenarioType": "INCOMPLETE_MISSING_LOGS",
+        "isComplete": False,
+        "readinessScore": 30.0,
+        "reporterEmail": "demo-qa-03@northstar.example.com",
+        "description": "I tried to create a circuit provisioning request and it gave me an error on the screen.",
+        "apiDetails": "",
+        "logs": "",
+        "requestPayload": "",
+        "responsePayload": "",
+        "errorMessage": "Internal error occurred",
+        "expectedBehavior": "Should succeed",
+        "actualBehavior": "Got error",
+        "replicationSteps": "Click submit",
+        "correlationId": "",
+        "probableRootCause": "",
+        "resolution": ""
+    },
+    {
+        "ticketKey": "NOVA-104",
+        "title": "HTTP 401 Unauthorized: JWT token expired on integration-gateway ingress",
+        "service": "integration-gateway",
+        "environment": "staging",
+        "statusCode": 401,
+        "scenarioType": "AUTH_EXPIRED_TOKEN",
+        "isComplete": True,
+        "readinessScore": 90.0,
+        "reporterEmail": "demo-dev-04@northstar.example.com",
+        "description": "Integration gateway rejected request from partner portal with 401 Unauthorized. JWT validation claims token expired 120 seconds ago.",
+        "apiDetails": "POST /api/v1/requests (Host: integration-gateway.internal.northstar.example.com:8087)",
+        "logs": (
+            "2026-10-09T08:35:10.450Z [gateway-worker-1] WARN  c.n.gateway.security.JwtAuthenticationFilter "
+            "- [corrId=CORR-DEMO-1004, traceId=trace-demo-10492] JWT claim 'exp' [1760000000] is before current clock [1760000120]. Token expired.\n"
+            "com.auth0.jwt.exceptions.TokenExpiredException: The Token has expired on 2026-10-09T08:33:10Z."
+        ),
+        "requestPayload": '{"customerId": "DEMO-CUST-8041", "requestType": "PROVISION_CIRCUIT"}',
+        "responsePayload": '{"error": "UNAUTHORIZED", "message": "Security token has expired", "status": 401}',
+        "errorMessage": "com.auth0.jwt.exceptions.TokenExpiredException: The Token has expired",
+        "expectedBehavior": "Integration gateway validates active token or returns token refresh prompt.",
+        "actualBehavior": "401 Unauthorized returned to client.",
+        "replicationSteps": "Send request with expired bearer token header Authorization: Bearer eyJhbGci...",
+        "correlationId": "CORR-DEMO-1004",
+        "probableRootCause": "Clock drift between edge gateway and auth issuer or client failure to refresh OAuth2 token.",
+        "resolution": "Configure 30-second leeway in JWT verification and update client SDK to refresh tokens 5 minutes prior to expiry."
+    },
+    {
+        "ticketKey": "NOVA-105",
+        "title": "HTTP 400 Bad Request: Schema validation failed for negative bandwidth value",
+        "service": "request-validation-engine",
+        "environment": "development",
+        "statusCode": 400,
+        "scenarioType": "SCHEMA_VALIDATION_FAILURE",
+        "isComplete": True,
+        "readinessScore": 95.0,
+        "reporterEmail": "demo-tester-05@northstar.example.com",
+        "description": "The validation engine rejected order payload because bandwidthMbps was -50. Schema requires minimum 10.",
+        "apiDetails": "POST /api/v1/validate (Host: request-validation-engine.internal.northstar.example.com:8083)",
+        "logs": (
+            "2026-10-09T08:41:00.123Z [validation-exec-2] INFO  c.n.validation.engine.SchemaValidator "
+            "- [corrId=CORR-DEMO-1005] Schema constraint violation: $.parameters.bandwidthMbps must be >= 10, found: -50"
+        ),
+        "requestPayload": '{"entityType": "SERVICE_ORDER", "payload": {"bandwidthMbps": -50, "region": "us-east-zone-1"}}',
+        "responsePayload": '{"valid": false, "errors": ["parameters.bandwidthMbps must be greater than or equal to 10"]}',
+        "errorMessage": "SchemaConstraintViolationException: bandwidthMbps must be >= 10",
+        "expectedBehavior": "Reject with clean field-level error messages.",
+        "actualBehavior": "HTTP 400 returned with validation error array.",
+        "replicationSteps": "Submit POST to /api/v1/validate with bandwidthMbps = -50.",
+        "correlationId": "CORR-DEMO-1005",
+        "probableRootCause": "Client-side form missing input validation constraint before submission.",
+        "resolution": "Add frontend min=10 boundary validation to bandwidth input field."
+    },
+    {
+        "ticketKey": "NOVA-106",
+        "title": "HTTP 429 Too Many Requests: Rate limit exceeded on partner-connect-api",
+        "service": "partner-connect-api",
+        "environment": "production-simulation",
+        "statusCode": 429,
+        "scenarioType": "RATE_LIMIT_EXCEEDED",
+        "isComplete": True,
+        "readinessScore": 90.0,
+        "reporterEmail": "demo-dev-06@northstar.example.com",
+        "description": "Carrier webhook sync flooded partner-connect-api with 350 requests/sec, exceeding token bucket limit of 100 req/sec.",
+        "apiDetails": "POST /api/v1/partner/sync (Host: partner-connect-api.internal.northstar.example.com:8089)",
+        "logs": (
+            "2026-10-09T08:50:33.200Z [rate-limiter-1] WARN  c.n.partner.interceptor.RateLimitInterceptor "
+            "- [corrId=CORR-DEMO-1006] Client PARTNER-CARRIER-01 exceeded rate limit quota (100 req/s). Current: 352 req/s"
+        ),
+        "requestPayload": '{"partnerId": "PARTNER-CARRIER-01", "batchSize": 500}',
+        "responsePayload": '{"error": "TOO_MANY_REQUESTS", "retryAfterSeconds": 15, "status": 429}',
+        "errorMessage": "RateLimitExceededException: Quota exceeded for client PARTNER-CARRIER-01",
+        "expectedBehavior": "Requests throttled with standard Retry-After header.",
+        "actualBehavior": "Immediate 429 responses returned.",
+        "replicationSteps": "Send 150 consecutive requests within 1 second using synthetic load tool.",
+        "correlationId": "CORR-DEMO-1006",
+        "probableRootCause": "Partner automated batch job executed without exponential backoff or pacing.",
+        "resolution": "Configure partner client to use queued batching and honor Retry-After response header."
+    },
+    {
+        "ticketKey": "NOVA-107",
+        "title": "HTTP 503 Service Unavailable: Database connection pool exhaustion in resource inventory",
+        "service": "resource-inventory-service",
+        "environment": "staging",
+        "statusCode": 503,
+        "scenarioType": "CONNECTION_POOL_EXHAUSTION",
+        "isComplete": True,
+        "readinessScore": 100.0,
+        "reporterEmail": "demo-sre-07@northstar.example.com",
+        "description": "HikariCP connection pool exhausted after 30000ms. All 20 connections in pool active with long-running topology lock queries.",
+        "apiDetails": "GET /api/v1/resources/DEMO-RESOURCE-1001 (Host: resource-inventory-service.internal.northstar.example.com:8084)",
+        "logs": (
+            "2026-10-09T09:01:05.110Z [http-nio-8084-exec-12] ERROR com.zaxxer.hikari.pool.HikariPool "
+            "- [corrId=CORR-DEMO-1007, traceId=trace-demo-77123] HikariPool-1 - Connection is not available, request timed out after 30000ms.\n"
+            "java.sql.SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30000ms.\n"
+            "\tat com.zaxxer.hikari.pool.HikariPool.createTimeoutException(HikariPool.java:696)\n"
+            "\tat com.zaxxer.hikari.pool.HikariPool.getConnection(HikariPool.java:197)"
+        ),
+        "requestPayload": '{"lookupKey": "DEMO-RESOURCE-1001"}',
+        "responsePayload": '{"error": "SERVICE_UNAVAILABLE", "message": "Database connectivity pool exhausted", "status": 503}',
+        "errorMessage": "SQLTransientConnectionException: HikariPool-1 - Connection is not available, request timed out after 30000ms",
+        "expectedBehavior": "Query completes in <50ms with pool utilization under 60%.",
+        "actualBehavior": "All threads wait for connection until timeout, causing 503.",
+        "replicationSteps": "Simulate 50 concurrent lookups while a heavy batch update runs in background.",
+        "correlationId": "CORR-DEMO-1007",
+        "probableRootCause": "Unindexed full table scan on virtual_circuits holding open transactions too long.",
+        "resolution": "Add composite index on (site_id, resource_id) and increase maximum-pool-size to 40."
+    },
+    {
+        "ticketKey": "NOVA-108",
+        "title": "HTTP 502 Bad Gateway: Upstream carrier connection reset",
+        "service": "partner-connect-api",
+        "environment": "staging",
+        "statusCode": 502,
+        "scenarioType": "UPSTREAM_BAD_GATEWAY",
+        "isComplete": True,
+        "readinessScore": 85.0,
+        "reporterEmail": "demo-ops-08@northstar.example.com",
+        "description": "Third-party synthetic carrier simulator terminated TCP connection prematurely during handoff handshake.",
+        "apiDetails": "POST /api/v1/partner/carrier-route (Host: partner-connect-api.internal.northstar.example.com:8089)",
+        "logs": (
+            "2026-10-09T09:12:44.789Z [partner-http-3] ERROR c.n.partner.client.CarrierSimulatorClient "
+            "- [corrId=CORR-DEMO-1008] IOException: Connection reset by peer during TLS handshake with carrier-sim.example.com:8443\n"
+            "java.io.IOException: Connection reset by peer\n"
+            "\tat java.base/sun.nio.ch.SocketChannelImpl.checkConnect(SocketChannelImpl.java:806)"
+        ),
+        "requestPayload": '{"partnerCircuitId": "PARTNER-CKT-990", "allocationBandwidth": 1000}',
+        "responsePayload": '{"error": "BAD_GATEWAY", "message": "Carrier simulator connection reset", "status": 502}',
+        "errorMessage": "java.io.IOException: Connection reset by peer",
+        "expectedBehavior": "Clean handshake or automatic retry with backup simulator instance.",
+        "actualBehavior": "502 Bad Gateway propagated to caller.",
+        "replicationSteps": "Submit route setup when carrier mock server is set to reset socket state.",
+        "correlationId": "CORR-DEMO-1008",
+        "probableRootCause": "TLS 1.3 cipher suite negotiation failure on carrier endpoint simulation.",
+        "resolution": "Update truststore cipher suites and configure HTTP client retry policy (3 retries with jitter)."
+    },
+    {
+        "ticketKey": "NOVA-109",
+        "title": "NullPointerException in service-request-api when customerId is missing",
+        "service": "service-request-api",
+        "environment": "development",
+        "statusCode": 500,
+        "scenarioType": "UNHANDLED_NULL_POINTER",
+        "isComplete": True,
+        "readinessScore": 90.0,
+        "reporterEmail": "demo-dev-09@northstar.example.com",
+        "description": "Backend throws unhandled NullPointerException when request parameters object has null customerId.",
+        "apiDetails": "POST /api/v1/requests (Host: service-request-api.internal.northstar.example.com:8081)",
+        "logs": (
+            "2026-10-09T09:20:18.301Z [http-nio-8081-exec-7] ERROR c.n.service.request.RequestController "
+            "- [corrId=CORR-DEMO-1009] Uncaught exception processing request\n"
+            "java.lang.NullPointerException: Cannot invoke 'String.trim()' because 'customerId' is null\n"
+            "\tat com.northstar.service.request.service.RequestValidator.validateCustomer(RequestValidator.java:45)\n"
+            "\tat com.northstar.service.request.service.RequestService.process(RequestService.java:62)"
+        ),
+        "requestPayload": '{"requestType": "PROVISION_CIRCUIT", "parameters": {"bandwidthMbps": 100}}',
+        "responsePayload": '{"error": "INTERNAL_SERVER_ERROR", "message": "Unexpected error", "status": 500}',
+        "errorMessage": "java.lang.NullPointerException: Cannot invoke 'String.trim()' because 'customerId' is null",
+        "expectedBehavior": "Validation returns 400 Bad Request with 'customerId is mandatory'.",
+        "actualBehavior": "500 Internal Server Error with stack trace.",
+        "replicationSteps": "Send POST request omitting 'customerId' attribute.",
+        "correlationId": "CORR-DEMO-1009",
+        "probableRootCause": "Missing @NotNull annotation on DTO field customerId.",
+        "resolution": "Annotate CustomerRequestDTO with @NotBlank(message = 'customerId is required')."
+    },
+    {
+        "ticketKey": "NOVA-110",
+        "title": "API returns 404 for existing order",
+        "service": "service-request-api",
+        "environment": "production-simulation",
+        "statusCode": 404,
+        "scenarioType": "INCOMPLETE_MISSING_PAYLOAD",
+        "isComplete": False,
+        "readinessScore": 40.0,
+        "reporterEmail": "demo-user-10@northstar.example.com",
+        "description": "Querying for an order that was just submitted returns not found 404.",
+        "apiDetails": "GET /api/v1/requests/REQ-DEMO-9999",
+        "logs": "2026-10-09T09:25:00Z WARN RequestNotFoundException: REQ-DEMO-9999 not found in primary store",
+        "requestPayload": "",
+        "responsePayload": "",
+        "errorMessage": "RequestNotFoundException",
+        "expectedBehavior": "Should find the order",
+        "actualBehavior": "Returns 404",
+        "replicationSteps": "Fetch REQ-DEMO-9999",
+        "correlationId": "CORR-DEMO-1010",
+        "probableRootCause": "",
+        "resolution": ""
+    },
+    {
+        "ticketKey": "NOVA-111",
+        "title": "SerializationException in event-delivery-service due to schema version mismatch",
+        "service": "event-delivery-service",
+        "environment": "staging",
+        "statusCode": 500,
+        "scenarioType": "SCHEMA_VERSION_MISMATCH",
+        "isComplete": True,
+        "readinessScore": 95.0,
+        "reporterEmail": "demo-messaging-11@northstar.example.com",
+        "description": "Consumer failed to deserialize event topic 'service.lifecycle.events.v2'. Producer published v1 schema payload missing correlationHeaders.",
+        "apiDetails": "Kafka Consumer Topic: service.lifecycle.events.v2 (event-delivery-service:8088)",
+        "logs": (
+            "2026-10-09T09:33:14.220Z [kafka-consumer-1] ERROR c.n.event.consumer.LifecycleEventConsumer "
+            "- [corrId=CORR-DEMO-1011] Deserialization failure on partition 2, offset 19482\n"
+            "org.apache.kafka.common.errors.SerializationException: Error deserializing Avro message for schema id 42: Field 'correlationHeaders' not found in record\n"
+            "\tat io.confluent.kafka.serializers.AbstractKafkaAvroDeserializer.deserialize(AbstractKafkaAvroDeserializer.java:180)"
+        ),
+        "requestPayload": '{"eventId": "EVT-8812", "eventType": "ORDER_COMPLETED"}',
+        "responsePayload": '{"status": "DEAD_LETTERED", "reason": "SerializationException"}',
+        "errorMessage": "SerializationException: Field 'correlationHeaders' not found in record",
+        "expectedBehavior": "Payload conforms to v2 schema or Avro evolution defaults are applied.",
+        "actualBehavior": "Consumer crashes and poisons partition queue.",
+        "replicationSteps": "Publish v1 format JSON event into v2 topic without default value for correlationHeaders.",
+        "correlationId": "CORR-DEMO-1011",
+        "probableRootCause": "Backward compatibility break in Avro schema registry without default value for correlationHeaders.",
+        "resolution": "Set default value '[]' for correlationHeaders field in v2 Avro schema to ensure full backward compatibility."
+    },
+    {
+        "ticketKey": "NOVA-112",
+        "title": "Out of Memory: capacity-planning-api heap saturation during matrix forecast",
+        "service": "capacity-planning-api",
+        "environment": "staging",
+        "statusCode": 500,
+        "scenarioType": "MEMORY_EXHAUSTION",
+        "isComplete": True,
+        "readinessScore": 90.0,
+        "reporterEmail": "demo-perf-12@northstar.example.com",
+        "description": "Simulation run on 5000 topological nodes caused JVM heap allocation failure: java.lang.OutOfMemoryError: Java heap space.",
+        "apiDetails": "POST /api/v1/capacity/forecast (Host: capacity-planning-api.internal.northstar.example.com:8085)",
+        "logs": (
+            "2026-10-09T09:40:02.100Z [matrix-calculator-thread-1] ERROR c.n.capacity.engine.ForecastMatrixEngine "
+            "- [corrId=CORR-DEMO-1012] Fatal error during matrix allocation\n"
+            "java.lang.OutOfMemoryError: Java heap space\n"
+            "\tat com.northstar.capacity.engine.ForecastMatrixEngine.buildAdjacencyMatrix(ForecastMatrixEngine.java:188)\n"
+            "\tat com.northstar.capacity.service.ForecastService.generate(ForecastService.java:76)"
+        ),
+        "requestPayload": '{"region": "all-regions", "nodesCount": 5000, "forecastDays": 90}',
+        "responsePayload": '{"error": "OUT_OF_MEMORY", "message": "Heap space exhausted", "status": 500}',
+        "errorMessage": "java.lang.OutOfMemoryError: Java heap space",
+        "expectedBehavior": "Stream calculations in chunks without loading entire adjacency matrix into heap.",
+        "actualBehavior": "Container crashes and Kubernetes restarts the pod.",
+        "replicationSteps": "Trigger forecast API with nodesCount=5000.",
+        "correlationId": "CORR-DEMO-1012",
+        "probableRootCause": "Sparse matrix represented as dense 2D array creating 5000x5000x90 object allocations.",
+        "resolution": "Refactor to use sparse matrix representation and stream calculation per region."
+    },
+    {
+        "ticketKey": "NOVA-113",
+        "title": "Graph cycle detected in topology-registry causing infinite loop",
+        "service": "topology-registry",
+        "environment": "development",
+        "statusCode": 500,
+        "scenarioType": "TOPOLOGY_CYCLE_ERROR",
+        "isComplete": True,
+        "readinessScore": 85.0,
+        "reporterEmail": "demo-topo-13@northstar.example.com",
+        "description": "Adding circular link between NODE-EAST-1 and NODE-EAST-2 caused depth-first search in topology registry to overflow stack.",
+        "apiDetails": "POST /api/v1/topology/links (Host: topology-registry.internal.northstar.example.com:8086)",
+        "logs": (
+            "2026-10-09T09:45:12.890Z [topo-exec-1] ERROR c.n.topology.graph.DfsTraversalService "
+            "- [corrId=CORR-DEMO-1013] StackOverflowError in recursive graph traversal at node: NODE-EAST-1\n"
+            "java.lang.StackOverflowError\n"
+            "\tat com.northstar.topology.graph.DfsTraversalService.findShortestPath(DfsTraversalService.java:55)\n"
+            "\tat com.northstar.topology.graph.DfsTraversalService.findShortestPath(DfsTraversalService.java:56)"
+        ),
+        "requestPayload": '{"sourceNode": "NODE-EAST-1", "targetNode": "NODE-EAST-2", "bidirectional": true}',
+        "responsePayload": '{"error": "STACK_OVERFLOW", "message": "Graph cycle loop", "status": 500}',
+        "errorMessage": "java.lang.StackOverflowError",
+        "expectedBehavior": "Reject link creation if it introduces cyclic dependency without visited set.",
+        "actualBehavior": "Thread stack overflow and 500 error.",
+        "replicationSteps": "Add bidirectional link between already peered nodes.",
+        "correlationId": "CORR-DEMO-1013",
+        "probableRootCause": "Visited set omitted in recursive DFS path finding method.",
+        "resolution": "Implement iterative BFS with explicit visited HashSet and cycle detection check."
+    },
+    {
+        "ticketKey": "NOVA-114",
+        "title": "System slow",
+        "service": "service-request-api",
+        "environment": "production-simulation",
+        "statusCode": 504,
+        "scenarioType": "INCOMPLETE_MINIMAL_DESCRIPTION",
+        "isComplete": False,
+        "readinessScore": 15.0,
+        "reporterEmail": "demo-user-14@northstar.example.com",
+        "description": "Everything is running very slow today.",
+        "apiDetails": "",
+        "logs": "",
+        "requestPayload": "",
+        "responsePayload": "",
+        "errorMessage": "",
+        "expectedBehavior": "Fast response",
+        "actualBehavior": "Slow",
+        "replicationSteps": "",
+        "correlationId": "",
+        "probableRootCause": "",
+        "resolution": ""
+    },
+    {
+        "ticketKey": "NOVA-115",
+        "title": "HTTP 409 Conflict: Concurrent modification in workflow-orchestrator state machine",
+        "service": "workflow-orchestrator",
+        "environment": "production-simulation",
+        "statusCode": 409,
+        "scenarioType": "CONCURRENT_UPDATE_CONFLICT",
+        "isComplete": True,
+        "readinessScore": 95.0,
+        "reporterEmail": "demo-sre-15@northstar.example.com",
+        "description": "Two workers simultaneously attempted to transition workflow WF-EXEC-5021 from ALLOCATING to COMPLETED. OptimisticLockException thrown.",
+        "apiDetails": "PATCH /api/v1/workflows/WF-EXEC-5021/status (workflow-orchestrator:8082)",
+        "logs": (
+            "2026-10-09T10:00:19.412Z [orchestrator-worker-2] WARN  c.n.workflow.service.WorkflowService "
+            "- [corrId=CORR-DEMO-1015, traceId=trace-demo-33109] Optimistic lock conflict on entity WorkflowExecution[id=WF-EXEC-5021, version=3]\n"
+            "jakarta.persistence.OptimisticLockException: Row was updated or deleted by another transaction (or unsaved-value mapping was incorrect)"
+        ),
+        "requestPayload": '{"executionId": "WF-EXEC-5021", "targetStatus": "COMPLETED", "expectedVersion": 3}',
+        "responsePayload": '{"error": "OPTIMISTIC_LOCK_EXCEPTION", "message": "Version conflict on record", "status": 409}',
+        "errorMessage": "jakarta.persistence.OptimisticLockException: Row was updated or deleted by another transaction",
+        "expectedBehavior": "Distributed lock or automatic retry with latest version state.",
+        "actualBehavior": "Throws 409 conflict and fails the step.",
+        "replicationSteps": "Send concurrent PATCH requests with identical version parameter.",
+        "correlationId": "CORR-DEMO-1015",
+        "probableRootCause": "Double-triggering of completion webhook from Kafka consumer and REST fallback.",
+        "resolution": "Implement idempotency key check on workflow status transitions."
+    },
+    {
+        "ticketKey": "NOVA-116",
+        "title": "LLM Inference timeout in incident-intelligence-service",
+        "service": "incident-intelligence-service",
+        "environment": "staging",
+        "statusCode": 504,
+        "scenarioType": "INFERENCE_TIMEOUT",
+        "isComplete": True,
+        "readinessScore": 90.0,
+        "reporterEmail": "demo-ai-16@northstar.example.com",
+        "description": "Semantic triage investigation timed out after 20 seconds waiting on LLM model response for large stack trace analysis.",
+        "apiDetails": "POST /api/v1/ai/investigate (incident-intelligence-service:8090)",
+        "logs": (
+            "2026-10-09T10:15:30.901Z [ai-executor-1] ERROR c.n.ai.service.TriageService "
+            "- [corrId=CORR-DEMO-1016] TimeoutException: Upstream inference model did not respond within 20000ms\n"
+            "java.util.concurrent.TimeoutException: Model inference exceeded timeout limit"
+        ),
+        "requestPayload": '{"ticketKey": "NOVA-101", "includeStackTraces": true}',
+        "responsePayload": '{"error": "INFERENCE_TIMEOUT", "message": "AI analysis timed out", "status": 504}',
+        "errorMessage": "java.util.concurrent.TimeoutException: Model inference exceeded timeout limit",
+        "expectedBehavior": "Return analysis within 5 seconds or fallback to deterministic heuristic rules.",
+        "actualBehavior": "504 Gateway Timeout returned.",
+        "replicationSteps": "Submit investigation payload with >50kb raw logs when inference latency is high.",
+        "correlationId": "CORR-DEMO-1016",
+        "probableRootCause": "Prompt token length exceeded optimal context window causing provider queuing.",
+        "resolution": "Truncate and summarize stack trace logs before submitting to LLM inference engine."
+    },
+    {
+        "ticketKey": "NOVA-117",
+        "title": "recovery-coordinator failed to execute runbook due to safety guardrail trip",
+        "service": "recovery-coordinator",
+        "environment": "production-simulation",
+        "statusCode": 412,
+        "scenarioType": "GUARDRAIL_PRECONDITION_FAILED",
+        "isComplete": True,
+        "readinessScore": 95.0,
+        "reporterEmail": "demo-sre-17@northstar.example.com",
+        "description": "Automated self-healing runbook RB-RESTART-INVENTORY aborted execution because cluster health was degraded (<80% healthy nodes).",
+        "apiDetails": "POST /api/v1/recovery/execute (recovery-coordinator:8092)",
+        "logs": (
+            "2026-10-09T10:22:05.333Z [recovery-worker-3] WARN  c.n.recovery.guardrails.SafetyEvaluator "
+            "- [corrId=CORR-DEMO-1017] Guardrail failed: HealthyNodeCount (1/3) < threshold (2/3). Aborting automated restart runbook."
+        ),
+        "requestPayload": '{"runbookId": "RB-RESTART-INVENTORY", "targetService": "resource-inventory-service"}',
+        "responsePayload": '{"error": "PRECONDITION_FAILED", "message": "Cluster safety guardrail tripped", "status": 412}',
+        "errorMessage": "GuardrailViolationException: Cluster safety threshold not met",
+        "expectedBehavior": "Coordinator escalates to human on-call engineer via PagerDuty simulator.",
+        "actualBehavior": "Aborts cleanly with 412 Precondition Failed status.",
+        "replicationSteps": "Trigger recovery runbook while 2 of 3 replicas are marked unhealthy.",
+        "correlationId": "CORR-DEMO-1017",
+        "probableRootCause": "Underlying cluster node failure prevented automated remediation.",
+        "resolution": "Expected safety guardrail behavior; route ticket to Level-3 infrastructure on-call."
+    },
+    {
+        "ticketKey": "NOVA-118",
+        "title": "Duplicate IP allocation on topology edge node",
+        "service": "resource-inventory-service",
+        "environment": "development",
+        "statusCode": 409,
+        "scenarioType": "DUPLICATE_IP_ALLOCATION",
+        "isComplete": True,
+        "readinessScore": 90.0,
+        "reporterEmail": "demo-net-18@northstar.example.com",
+        "description": "Two virtual circuits assigned same synthetic gateway IP 198.51.100.24 on interface ETH-0/1.",
+        "apiDetails": "POST /api/v1/resources/allocate (resource-inventory-service:8084)",
+        "logs": (
+            "2026-10-09T10:30:11.120Z [allocator-thread-4] WARN  c.n.inventory.service.IpManagementService "
+            "- [corrId=CORR-DEMO-1018] IPAddressCollisionException: Synthetic IP 198.51.100.24 is already leased to circuit DEMO-RESOURCE-0992"
+        ),
+        "requestPayload": '{"resourceType": "IP_ASSIGNMENT", "requestedIp": "198.51.100.24", "interface": "ETH-0/1"}',
+        "responsePayload": '{"error": "IP_COLLISION", "message": "IP 198.51.100.24 is already assigned", "status": 409}',
+        "errorMessage": "IPAddressCollisionException: Synthetic IP 198.51.100.24 is already leased",
+        "expectedBehavior": "Allocate next available address in synthetic CIDR block 198.51.100.0/24.",
+        "actualBehavior": "Returns 409 collision.",
+        "replicationSteps": "Request static allocation for already leased IP.",
+        "correlationId": "CORR-DEMO-1018",
+        "probableRootCause": "Client sent hardcoded IP instead of requesting dynamic allocation from pool.",
+        "resolution": "Change client request to omit requestedIp parameter and allow pool auto-selection."
+    },
+    {
+        "ticketKey": "NOVA-119",
+        "title": "log-correlation-engine trace buffer drop during traffic spike",
+        "service": "log-correlation-engine",
+        "environment": "production-simulation",
+        "statusCode": 503,
+        "scenarioType": "BUFFER_OVERFLOW",
+        "isComplete": True,
+        "readinessScore": 85.0,
+        "reporterEmail": "demo-sre-19@northstar.example.com",
+        "description": "Log correlation ingestion queue reached 100% capacity (10,000 trace spans). Buffer dropped 450 spans.",
+        "apiDetails": "POST /api/v1/telemetry/spans (log-correlation-engine:8091)",
+        "logs": (
+            "2026-10-09T10:45:00.012Z [span-ingestor-5] ERROR c.n.observability.buffer.RingBuffer "
+            "- [corrId=CORR-DEMO-1019] RingBufferCapacityReached: Dropped 450 spans due to backpressure from storage engine"
+        ),
+        "requestPayload": '{"batchSize": 1000, "spans": [{"traceId": "trace-demo-999"}]}',
+        "responsePayload": '{"error": "BACKPRESSURE_DROP", "message": "Ingest buffer full", "status": 503}',
+        "errorMessage": "RingBufferCapacityReached: Dropped 450 spans",
+        "expectedBehavior": "Apply reactive backpressure or scale buffer pool dynamically.",
+        "actualBehavior": "503 returned and incoming spans dropped.",
+        "replicationSteps": "Burst 15,000 trace spans across 5 concurrent clients.",
+        "correlationId": "CORR-DEMO-1019",
+        "probableRootCause": "Disk I/O bottleneck on telemetry storage volume causing consumer lag.",
+        "resolution": "Increase ring buffer capacity to 50,000 and upgrade telemetry persistence disk IOPS."
+    },
+    {
+        "ticketKey": "NOVA-120",
+        "title": "Please fix my issue",
+        "service": "workflow-orchestrator",
+        "environment": "staging",
+        "statusCode": 500,
+        "scenarioType": "INCOMPLETE_NO_DETAILS",
+        "isComplete": False,
+        "readinessScore": 10.0,
+        "reporterEmail": "demo-user-20@northstar.example.com",
+        "description": "Something failed while doing work yesterday.",
+        "apiDetails": "",
+        "logs": "",
+        "requestPayload": "",
+        "responsePayload": "",
+        "errorMessage": "",
+        "expectedBehavior": "",
+        "actualBehavior": "",
+        "replicationSteps": "",
+        "correlationId": "",
+        "probableRootCause": "",
+        "resolution": ""
+    },
+    {
+        "ticketKey": "NOVA-121",
+        "title": "HTTP 400 Bad Request: Missing mandatory requestType in service-request-api",
+        "service": "service-request-api",
+        "environment": "staging",
+        "statusCode": 400,
+        "scenarioType": "VALIDATION_MISSING_FIELD",
+        "isComplete": True,
+        "readinessScore": 95.0,
+        "reporterEmail": "demo-dev-21@northstar.example.com",
+        "description": "service-request-api rejected client order because required field 'requestType' was null.",
+        "apiDetails": "POST /api/v1/requests (service-request-api:8081)",
+        "logs": (
+            "2026-10-09T11:00:22.450Z [http-nio-8081-exec-2] WARN  c.n.service.request.advice.GlobalExceptionHandler "
+            "- [corrId=CORR-DEMO-1021] MethodArgumentNotValidException: Field 'requestType' must not be blank"
+        ),
+        "requestPayload": '{"customerId": "DEMO-CUST-8041", "parameters": {"bandwidthMbps": 100}}',
+        "responsePayload": '{"status": 400, "error": "BAD_REQUEST", "message": "Field \'requestType\' must not be blank"}',
+        "errorMessage": "MethodArgumentNotValidException: Field 'requestType' must not be blank",
+        "expectedBehavior": "Clear validation error returned with 400 Bad Request.",
+        "actualBehavior": "400 Bad Request returned.",
+        "replicationSteps": "Send POST request without requestType field.",
+        "correlationId": "CORR-DEMO-1021",
+        "probableRootCause": "Caller schema was out of date with API contract v1.2.",
+        "resolution": "Update caller client library to provide requestType in all payload submissions."
+    },
+    {
+        "ticketKey": "NOVA-122",
+        "title": "HTTP 500: Database deadlock during concurrent circuit reservation",
+        "service": "resource-inventory-service",
+        "environment": "production-simulation",
+        "statusCode": 500,
+        "scenarioType": "DB_DEADLOCK",
+        "isComplete": True,
+        "readinessScore": 100.0,
+        "reporterEmail": "demo-sre-22@northstar.example.com",
+        "description": "Two simultaneous transactions locked resource rows in reverse order: TX1 locked DEMO-RESOURCE-1001 then 1002; TX2 locked 1002 then 1001.",
+        "apiDetails": "POST /api/v1/resources/allocate (resource-inventory-service:8084)",
+        "logs": (
+            "2026-10-09T11:15:40.812Z [http-nio-8084-exec-9] ERROR org.hibernate.engine.jdbc.spi.SqlExceptionHelper "
+            "- [corrId=CORR-DEMO-1022, traceId=trace-demo-44810] ERROR: deadlock detected\n"
+            "org.postgresql.util.PSQLException: ERROR: deadlock detected\n"
+            "  Detail: Process 1421 waits for ShareLock on transaction 88120; Process 1422 waits for ExclusiveLock on tuple (4, 12) of relation synthetic_resources.\n"
+            "\tat org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2713)\n"
+            "\tat com.northstar.inventory.service.ResourceAllocationService.reserveBatch(ResourceAllocationService.java:210)"
+        ),
+        "requestPayload": '{"batch": ["DEMO-RESOURCE-1001", "DEMO-RESOURCE-1002"]}',
+        "responsePayload": '{"error": "DEADLOCK_DETECTED", "message": "Transaction aborted by deadlock detector", "status": 500}',
+        "errorMessage": "PSQLException: ERROR: deadlock detected",
+        "expectedBehavior": "Resource allocation should acquire locks in sorted resourceId order to eliminate deadlock cycles.",
+        "actualBehavior": "PostgreSQL deadlock detector aborted TX1.",
+        "replicationSteps": "Execute two parallel batch reservations with inverted resource order.",
+        "correlationId": "CORR-DEMO-1022",
+        "probableRootCause": "Unordered batch lock acquisition pattern across concurrent worker threads.",
+        "resolution": "Sort resource IDs alphabetically before initiating row lock acquisition."
+    }
+]
+
+SAMPLE_LOG_FILES = {
+    "duplicate-resource-error.log": (
+        "2026-10-09 08:14:22.102 [http-nio-8084-exec-3] WARN  c.n.inventory.service.ResourceAllocationService - [corrId=CORR-DEMO-1001, traceId=trace-demo-88102] Resource ID DEMO-RESOURCE-1001 already reserved for site SITE-NYC-01.\n"
+        "2026-10-09 08:14:22.105 [http-nio-8084-exec-3] ERROR c.n.inventory.repository.JpaResourceRepository - [corrId=CORR-DEMO-1001] Primary key collision detected on table synthetic_resources\n"
+        "org.springframework.dao.DataIntegrityViolationException: Pre-existing allocation detected for resource ID: DEMO-RESOURCE-1001\n"
+        "\tat com.northstar.inventory.repository.JpaResourceRepository.save(JpaResourceRepository.java:94)\n"
+        "\tat com.northstar.inventory.service.ResourceAllocationService.reserveCircuit(ResourceAllocationService.java:142)\n"
+        "\tat com.northstar.inventory.controller.ResourceController.allocate(ResourceController.java:58)\n"
+        "\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)\n"
+        "2026-10-09 08:14:22.110 [http-nio-8084-exec-3] INFO  c.n.inventory.aspect.AuditLogger - [corrId=CORR-DEMO-1001] Allocation failed with status 409 Conflict\n"
+    ),
+    "downstream-timeout.json": json.dumps({
+        "timestamp": "2026-10-09T08:22:15.890Z",
+        "level": "ERROR",
+        "service": "workflow-orchestrator",
+        "correlationId": "CORR-DEMO-1002",
+        "traceId": "trace-demo-99231",
+        "logger": "com.northstar.workflow.engine.SagaStepExecutor",
+        "message": "Step ALLOCATE_IP timed out after 30000ms calling http://resource-inventory-service:8084/api/v1/resources/allocate",
+        "exception": {
+            "class": "java.net.http.HttpTimeoutException",
+            "message": "request timed out",
+            "stackTrace": [
+                "com.northstar.workflow.client.InventoryClient.allocateResource(InventoryClient.java:78)",
+                "com.northstar.workflow.engine.SagaStepExecutor.executeStep(SagaStepExecutor.java:112)",
+                "com.northstar.workflow.service.WorkflowRunner.run(WorkflowRunner.java:65)"
+            ]
+        },
+        "context": {
+            "workflowExecutionId": "WF-EXEC-5021",
+            "targetEndpoint": "http://resource-inventory-service:8084/api/v1/resources/allocate",
+            "timeoutConfiguredMs": 30000
+        }
+    }, indent=2),
+    "gateway-auth-exhaustion.log": (
+        "2026-10-09 08:35:10.450 [gateway-worker-1] DEBUG c.n.gateway.security.JwtAuthenticationFilter - Inbound request POST /api/v1/requests from IP 192.0.2.14\n"
+        "2026-10-09 08:35:10.452 [gateway-worker-1] WARN  c.n.gateway.security.JwtAuthenticationFilter - [corrId=CORR-DEMO-1004, traceId=trace-demo-10492] JWT claim 'exp' [1760000000] is before current clock [1760000120]. Token expired.\n"
+        "com.auth0.jwt.exceptions.TokenExpiredException: The Token has expired on 2026-10-09T08:33:10Z.\n"
+        "\tat com.auth0.jwt.JWTVerifier.assertValidDate(JWTVerifier.java:441)\n"
+        "\tat com.auth0.jwt.JWTVerifier.verify(JWTVerifier.java:395)\n"
+        "\tat com.northstar.gateway.security.JwtAuthenticationFilter.doFilter(JwtAuthenticationFilter.java:68)\n"
+        "2026-10-09 08:35:10.455 [gateway-worker-1] INFO  c.n.gateway.metrics.SecurityMetrics - [corrId=CORR-DEMO-1004] Rejection: 401 UNAUTHORIZED reason=TOKEN_EXPIRED\n"
+    ),
+    "schema-validation-failure.log": (
+        "2026-10-09 08:41:00.120 [validation-exec-2] DEBUG c.n.validation.engine.SchemaValidator - Inbound payload size 148 bytes for schema SERVICE_ORDER_V1\n"
+        "2026-10-09 08:41:00.123 [validation-exec-2] INFO  c.n.validation.engine.SchemaValidator - [corrId=CORR-DEMO-1005] Schema constraint violation: $.parameters.bandwidthMbps must be >= 10, found: -50\n"
+        "2026-10-09 08:41:00.125 [validation-exec-2] WARN  c.n.validation.controller.ValidationController - [corrId=CORR-DEMO-1005] Validation rejection: 1 error detected\n"
+    )
+}
+
+def main():
+    DEMO_DATA_DIR.mkdir(parents=True, exist_ok=True)
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+
+    # 1. Write incidents.json
+    incidents_file = DEMO_DATA_DIR / "incidents.json"
+    with open(incidents_file, "w", encoding="utf-8") as f:
+        json.dump(INCIDENTS, f, indent=2)
+    print(f"Generated {len(INCIDENTS)} synthetic incidents in {incidents_file}")
+
+    # 2. Write raw sample log files
+    for filename, content in SAMPLE_LOG_FILES.items():
+        log_file = LOGS_DIR / filename
+        with open(log_file, "w", encoding="utf-8") as f:
+            f.write(content)
+        print(f"Generated sample log fixture: {log_file}")
+
+if __name__ == "__main__":
+    main()

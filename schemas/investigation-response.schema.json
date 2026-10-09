@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "InvestigationResponse",
+  "type": "object",
+  "required": [
+    "ticket_key",
+    "summary",
+    "apis_involved",
+    "services_affected",
+    "probable_failure_point",
+    "probable_root_cause",
+    "confidence_score",
+    "reproduction_curl",
+    "reproduction_steps",
+    "developer_investigation_steps",
+    "suggested_test_cases",
+    "similar_incidents",
+    "rca_document",
+    "jira_comment_markdown"
+  ],
+  "properties": {
+    "ticket_key": { "type": "string" },
+    "summary": { "type": "string" },
+    "apis_involved": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "services_affected": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "probable_failure_point": { "type": "string" },
+    "probable_root_cause": { "type": "string" },
+    "confidence_score": { "type": "number", "minimum": 0, "maximum": 1 },
+    "reproduction_curl": { "type": "string" },
+    "reproduction_steps": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "developer_investigation_steps": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "suggested_test_cases": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "similar_incidents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["incident_id", "similarity_score", "summary", "resolution"],
+        "properties": {
+          "incident_id": { "type": "string" },
+          "similarity_score": { "type": "number" },
+          "summary": { "type": "string" },
+          "resolution": { "type": "string" }
+        }
+      }
+    },
+    "rca_document": { "type": "string" },
+    "jira_comment_markdown": { "type": "string" }
+  }
+}

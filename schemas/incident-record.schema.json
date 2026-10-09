@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SyntheticIncidentRecord",
+  "type": "object",
+  "required": [
+    "ticketKey",
+    "title",
+    "service",
+    "environment",
+    "statusCode",
+    "scenarioType",
+    "isComplete",
+    "readinessScore",
+    "reporterEmail",
+    "description"
+  ],
+  "properties": {
+    "ticketKey": { "type": "string" },
+    "title": { "type": "string" },
+    "service": { "type": "string" },
+    "environment": { "type": "string" },
+    "statusCode": { "type": "integer" },
+    "scenarioType": { "type": "string" },
+    "isComplete": { "type": "boolean" },
+    "readinessScore": { "type": "number", "minimum": 0, "maximum": 100 },
+    "reporterEmail": { "type": "string" },
+    "description": { "type": "string" },
+    "apiDetails": { "type": "string" },
+    "logs": { "type": "string" },
+    "requestPayload": { "type": "string" },
+    "responsePayload": { "type": "string" },
+    "errorMessage": { "type": "string" },
+    "expectedBehavior": { "type": "string" },
+    "actualBehavior": { "type": "string" },
+    "replicationSteps": { "type": "string" },
+    "correlationId": { "type": "string" },
+    "probableRootCause": { "type": "string" },
+    "resolution": { "type": "string" }
+  }
+}

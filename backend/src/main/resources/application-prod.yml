@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://postgres:5432/jirapilot}
+    driverClassName: org.postgresql.Driver
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:postgres}
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update

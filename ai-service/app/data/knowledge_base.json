@@ -1,0 +1,38 @@
+[
+  {
+    "jiraKey": "HACK-102",
+    "summary": "PEDS circuit provisioning failure due to duplicate NFID from upstream",
+    "affectedService": "PEDS",
+    "affectedApi": "POST /api/circuit/provision",
+    "rootCause": "Duplicate NFID received from upstream NTLS integration causing unique constraint violation in PEDS DB.",
+    "resolution": "Added NFID idempotency cache layer and pre-validation uniqueness check before database persist.",
+    "explanation": "High semantic and error correlation with duplicate NFID constraint failures in circuit provisioning flow."
+  },
+  {
+    "jiraKey": "HACK-205",
+    "summary": "WFM downstream timeout when communicating with Inventory Service",
+    "affectedService": "WFM",
+    "affectedApi": "POST /api/work-order/dispatch",
+    "rootCause": "Connection pool exhaustion on Inventory Service downstream endpoint during peak traffic hours.",
+    "resolution": "Increased HikariCP max pool size to 50 and reduced HTTP client timeout with circuit breaker fallback.",
+    "explanation": "Matching DownstreamTimeoutException and 504 Gateway Timeout signatures across WFM worker nodes."
+  },
+  {
+    "jiraKey": "HACK-318",
+    "summary": "Circuit Service NullPointerException in payload deserialization",
+    "affectedService": "CIRCUIT-SVC",
+    "affectedApi": "POST /api/circuit/create",
+    "rootCause": "Missing null check for customerId in incoming JSON request payload.",
+    "resolution": "Added @NotNull validation annotation and custom GlobalExceptionHandler.",
+    "explanation": "Identical payload parsing exception and missing field validation pattern."
+  },
+  {
+    "jiraKey": "HACK-412",
+    "summary": "API Gateway 502 Bad Gateway under concurrent authorization requests",
+    "affectedService": "GATEWAY",
+    "affectedApi": "GET /api/circuit/status",
+    "rootCause": "OAuth token verification cache eviction storm causing Auth Service saturation.",
+    "resolution": "Configured Redis distributed token cache with staggered TTL expiry.",
+    "explanation": "Shares API Gateway routing errors and downstream token validation latency."
+  }
+]

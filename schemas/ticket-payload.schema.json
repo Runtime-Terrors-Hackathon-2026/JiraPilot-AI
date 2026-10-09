@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TicketPayload",
+  "type": "object",
+  "required": ["ticketKey", "title", "description", "reporterEmail"],
+  "properties": {
+    "ticketKey": { "type": "string" },
+    "title": { "type": "string" },
+    "description": { "type": "string" },
+    "apiDetails": { "type": "string" },
+    "logs": { "type": "string" },
+    "requestPayload": { "type": "string" },
+    "responsePayload": { "type": "string" },
+    "environment": { "type": "string" },
+    "errorMessage": { "type": "string" },
+    "expectedBehavior": { "type": "string" },
+    "actualBehavior": { "type": "string" },
+    "replicationSteps": { "type": "string" },
+    "reporterEmail": { "type": "string" }
+  }
+}
