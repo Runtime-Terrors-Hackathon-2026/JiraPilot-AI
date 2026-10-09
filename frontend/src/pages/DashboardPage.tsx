@@ -7,7 +7,9 @@ import {
   GitBranch,
   Inbox,
   PlayCircle,
+  RefreshCw,
   ShieldCheck,
+  Sparkles,
 } from 'lucide-react';
 import {
   Bar,
@@ -43,6 +45,8 @@ interface DashboardPageProps {
   backendReachable: boolean;
   demoMode?: boolean | null;
   aiConfigured: boolean;
+  onSyncJira?: () => void;
+  onLoadDemoData?: () => void;
 }
 
 const CHART = ['#3b5ccc', '#0f766e', '#b45309', '#64748b', '#dc2626', '#6b8bff'];
@@ -62,6 +66,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   backendReachable,
   demoMode,
   aiConfigured,
+  onSyncJira,
+  onLoadDemoData,
 }) => {
   const waiting = summary?.waitingForInfoTickets ?? issues.filter((i) => i.status === 'WAITING_FOR_INFORMATION').length;
   const ready = summary?.readyTickets ?? issues.filter((i) => i.status === 'READY').length;
@@ -120,10 +126,36 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         title="Incident Operations"
         description="A clear view of ticket readiness, investigation progress and recommended next actions."
         actions={
-          <Button variant="primary" onClick={onOpenSimulate}>
-            <PlayCircle className="h-4 w-4" />
-            Simulate issue
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            {onSyncJira && (
+              <Button
+                variant="primary"
+                onClick={onSyncJira}
+                disabled={loading}
+                className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold shadow-sm active:scale-95 transition"
+                title="Fetch and synchronize live tickets from Atlassian Jira Cloud (KAN)"
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                Sync Jira (KAN)
+              </Button>
+            )}
+            {onLoadDemoData && (
+              <Button
+                variant="secondary"
+                onClick={onLoadDemoData}
+                disabled={loading}
+                className="hidden sm:inline-flex items-center gap-1.5 active:scale-95 transition"
+                title="Load synthetic hackathon scenario tickets (NOVA-101 to NOVA-107)"
+              >
+                <Sparkles className="h-4 w-4 text-amber-500" />
+                Demo Data
+              </Button>
+            )}
+            <Button variant="secondary" onClick={onOpenSimulate} className="active:scale-95 transition">
+              <PlayCircle className="h-4 w-4 text-teal" />
+              Simulate issue
+            </Button>
+          </div>
         }
       />
 

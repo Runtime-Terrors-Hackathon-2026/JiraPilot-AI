@@ -85,6 +85,41 @@ export const App: React.FC = () => {
     return () => clearInterval(interval);
   }, [fetchData]);
 
+  const handleSyncJira = async () => {
+    setLoading(true);
+    try {
+      push({ kind: 'info', title: 'Syncing live tickets from Jira Cloud project KAN...' });
+      const synced = await api.syncJiraCloud('KAN');
+      push({
+        kind: 'success',
+        title: `Jira sync completed: ${synced.length} tickets synchronized`,
+      });
+      await fetchData();
+    } catch (err: any) {
+      console.error(err);
+      push({ kind: 'error', title: 'Jira Sync Failed', message: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLoadDemoData = async () => {
+    setLoading(true);
+    try {
+      const res = await api.loadDemoData();
+      push({
+        kind: 'success',
+        title: `Demo Data Loaded: ${res.loadedCount} synthetic tickets ready`,
+      });
+      await fetchData();
+    } catch (err: any) {
+      console.error(err);
+      push({ kind: 'error', title: 'Failed to load demo data', message: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSimulateSuccess = async (newIssue: JiraIssue) => {
     push({ kind: 'success', title: `Issue ${newIssue.jiraKey} simulated successfully` });
     await fetchData();
@@ -115,6 +150,10 @@ export const App: React.FC = () => {
       aiStatus={aiStatus}
       backendReachable={backendReachable}
       notificationCount={unreadOrFailedEmails}
+      onSyncJira={handleSyncJira}
+      onLoadDemoData={handleLoadDemoData}
+      onOpenSimulate={() => setIsSimulateOpen(true)}
+      loading={loading}
     >
       {error && !backendReachable && (
         <div className="mb-6">
@@ -140,6 +179,8 @@ export const App: React.FC = () => {
             setCurrentView('issues');
           }}
           onOpenSimulate={() => setIsSimulateOpen(true)}
+          onSyncJira={handleSyncJira}
+          onLoadDemoData={handleLoadDemoData}
           search={search}
           filter={issueFilter}
           onFilterChange={setIssueFilter}
@@ -157,6 +198,7 @@ export const App: React.FC = () => {
           filter={issueFilter}
           onFilterChange={setIssueFilter}
           onRefresh={fetchData}
+          onSyncJira={handleSyncJira}
           loading={loading}
         />
       ) : currentView === 'logs' ? (
@@ -185,6 +227,8 @@ export const App: React.FC = () => {
             setCurrentView('issues');
           }}
           onOpenSimulate={() => setIsSimulateOpen(true)}
+          onSyncJira={handleSyncJira}
+          onLoadDemoData={handleLoadDemoData}
           search={search}
           filter={issueFilter}
           onFilterChange={setIssueFilter}

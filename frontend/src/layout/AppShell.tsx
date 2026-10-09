@@ -14,6 +14,10 @@ interface AppShellProps {
   aiStatus: NvidiaStatus | null;
   backendReachable: boolean;
   notificationCount: number;
+  onSyncJira?: () => void;
+  onLoadDemoData?: () => void;
+  onOpenSimulate?: () => void;
+  loading?: boolean;
   children: React.ReactNode;
 }
 
@@ -28,6 +32,10 @@ export const AppShell: React.FC<AppShellProps> = ({
   aiStatus,
   backendReachable,
   notificationCount,
+  onSyncJira,
+  onLoadDemoData,
+  onOpenSimulate,
+  loading,
   children,
 }) => {
   const [collapsed, setCollapsed] = useState(false);
@@ -56,6 +64,10 @@ export const AppShell: React.FC<AppShellProps> = ({
           health={health}
           aiStatus={aiStatus}
           backendReachable={backendReachable}
+          onSyncJira={onSyncJira}
+          onLoadDemoData={onLoadDemoData}
+          onOpenSimulate={onOpenSimulate}
+          loading={loading}
         />
         <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6">{children}</main>
       </div>
