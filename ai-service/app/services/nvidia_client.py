@@ -81,9 +81,15 @@ Analyze the failure above and output strictly the required JSON object."""
             {"role": "user", "content": user_prompt}
         ],
         "temperature": 0.2,
-        "max_tokens": 1500,
+        "max_tokens": 4096,
         "response_format": {"type": "json_object"} if "llama-3" in settings.NVIDIA_MODEL.lower() else None
     }
+
+    # Add reasoning support for thinking models if requested
+    if "kimi" in settings.NVIDIA_MODEL.lower():
+        payload["reasoning_effort"] = "max"
+    elif "nemotron" in settings.NVIDIA_MODEL.lower():
+        payload["extra_body"] = {"chat_template_kwargs": {"enable_thinking": True}}
 
     # Filter out None values in payload
     payload = {k: v for k, v in payload.items() if v is not None}
@@ -95,17 +101,22 @@ Analyze the failure above and output strictly the required JSON object."""
             response = await client.post(endpoint, headers=headers, json=payload)
             if response.status_code == 200:
                 data = response.json()
-                content = data["choices"][0]["message"]["content"]
-                
-                # Clean potential markdown wrapping ```json ... ```
+                message = data["choices"][0]["message"]
+                content = message.get("content") or ""
+                if not content and "reasoning_content" in message:
+                    content = message["reasoning_content"]
+
+                # Extract JSON if enclosed in markdown code blocks or brackets
                 cleaned = content.strip()
-                if cleaned.startswith("```json"):
-                    cleaned = cleaned[7:]
-                if cleaned.startswith("```"):
-                    cleaned = cleaned[3:]
-                if cleaned.endswith("```"):
-                    cleaned = cleaned[:-3]
-                    
+                if "```json" in cleaned:
+                    cleaned = cleaned.split("```json")[1].split("```")[0]
+                elif "```" in cleaned:
+                    cleaned = cleaned.split("```")[1].split("```")[0]
+                elif "{" in cleaned and "}" in cleaned:
+                    start_idx = cleaned.find("{")
+                    end_idx = cleaned.rfind("}")
+                    cleaned = cleaned[start_idx:end_idx + 1]
+
                 parsed = json.loads(cleaned.strip())
                 logger.info("[NVIDIA ADAPTER] Successfully obtained LLM reasoning response.")
                 return parsed

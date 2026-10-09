@@ -1,5 +1,22 @@
 import os
+from pathlib import Path
 from pydantic import BaseModel
+
+# Automatically load .env if present
+for env_path in [Path(".env"), Path("../.env"), Path(__file__).resolve().parents[2] / ".env"]:
+    if env_path.exists():
+        try:
+            with open(env_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        k, v = line.split("=", 1)
+                        k = k.strip()
+                        v = v.strip().strip('"').strip("'")
+                        if k not in os.environ:
+                            os.environ[k] = v
+        except Exception:
+            pass
 
 class Settings(BaseModel):
     APP_NAME: str = "JiraPilot AI Service"
