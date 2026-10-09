@@ -142,6 +142,35 @@ public class IssueService {
                         .build())
                 .collect(Collectors.toList());
 
+        List<IssueResponseDto.IssueAttachmentDto> attachmentDtos = entity.getAttachments() != null
+                ? entity.getAttachments().stream().map(att -> IssueResponseDto.IssueAttachmentDto.builder()
+                .id(att.getId())
+                .attachmentId(att.getAttachmentId())
+                .filename(att.getFilename())
+                .mimeType(att.getMimeType())
+                .sizeBytes(att.getSizeBytes())
+                .sha256Hash(att.getSha256Hash())
+                .status(att.getStatus() != null ? att.getStatus().name() : "RECEIVED")
+                .quarantined(att.isQuarantined())
+                .quarantineReason(att.getQuarantineReason())
+                .primaryService(att.getPrimaryService())
+                .primaryEndpoint(att.getPrimaryEndpoint())
+                .primaryStatus(att.getPrimaryStatus())
+                .correlationId(att.getCorrelationId())
+                .probableRootCause(att.getProbableRootCause())
+                .confidenceScore(att.getConfidenceScore())
+                .confidenceCategory(att.getConfidenceCategory())
+                .recommendedRepo(att.getRecommendedRepo())
+                .cloneCommand(att.getCloneCommand())
+                .analysisSummary(att.getAnalysisSummary())
+                .analysisJson(att.getAnalysisJson())
+                .jiraCommentPosted(att.isJiraCommentPosted())
+                .emailSent(att.isEmailSent())
+                .createdAt(att.getCreatedAt())
+                .analyzedAt(att.getAnalyzedAt())
+                .build()).collect(Collectors.toList())
+                : Collections.emptyList();
+
         return IssueResponseDto.builder()
                 .id(entity.getId())
                 .jiraKey(entity.getJiraKey())
@@ -169,6 +198,7 @@ public class IssueService {
                 .investigation(investigationDto)
                 .notifications(notifications)
                 .auditEvents(auditList)
+                .attachments(attachmentDtos)
                 .build();
     }
 

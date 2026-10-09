@@ -1,4 +1,4 @@
-# JiraPilot AI — Autonomous Jira Triage & Root Cause Investigation Platform
+# JiraPilot AI — Autonomous Jira Triage, Log Intelligence & RCA Platform
 
 [![Spring Boot 3.x](https://img.shields.io/badge/Spring%20Boot-3.2.5-brightgreen)](https://spring.io/projects/spring-boot)
 [![Java 21](https://img.shields.io/badge/Java-21%20LTS-orange)](https://adoptium.net)
@@ -6,11 +6,12 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688)](https://fastapi.tiangolo.com)
 [![React 18](https://img.shields.io/badge/React-18.2-61dafb)](https://react.dev)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8)](https://tailwindcss.com)
+[![NVIDIA NIM](https://img.shields.io/badge/NVIDIA%20NIM-Compatible-76B900)](https://build.nvidia.com)
+[![EmailJS](https://img.shields.io/badge/EmailJS-Notifications-FF6C37)](https://www.emailjs.com)
 
-**JiraPilot AI** is an enterprise-grade autonomous engineering operations and incident triage platform. When a new Jira issue is created or updated, JiraPilot AI automatically determines whether the issue contains sufficient diagnostic context (logs, API endpoints, request/response payloads, environment, error messages).
+**JiraPilot AI** is an enterprise-grade autonomous engineering operations, log intelligence, and incident triage platform built for the fictional organization **Northstar Digital Systems** (`northstar-labs`, synthetic Jira project `NOVA`).
 
-- If critical diagnostics are missing: It calculates a weighted readiness score, adds an intelligent comment to Jira, notifies the reporter by email, and pauses in a `WAITING_FOR_INFORMATION` state. When updated, it automatically re-evaluates.
-- If sufficient diagnostic information exists: It transitions the ticket to `READY`, executes automated root cause analysis (RCA), correlates downstream microservice dependencies, pinpoints the failure point, synthesizes safe reproduction commands (cURL & Postman), generates regression test suites (JUnit 5 & API), detects similar historical incidents, and posts a structured investigation report to Jira.
+When an issue is created or updated in Jira, or when server logs (`.log`, `.txt`, `.json`, `.jsonl`, `.log.gz`) are attached, JiraPilot AI automatically inspects diagnostic context, correlates distributed services, redacts credentials, pinpoints root causes with line-referenced evidence, matches approved GitHub repositories, generates copyable `git clone` commands, posts structured 7-section comments back to Jira, and dispatches incident alerts via EmailJS.
 
 ---
 
@@ -21,61 +22,69 @@
                                  │      Atlassian Jira Cloud       │
                                  │   (Webhooks & REST API v3)      │
                                  └────────────────┬────────────────┘
-                                                  │ Webhook / REST
+                                                  │ Webhook / Attachment Stream
                                                   ▼
 ┌──────────────────────┐      REST        ┌─────────────────────────────────┐
 │                      │ ◄──────────────► │       Spring Boot Backend       │
 │  React 18 Dashboard  │                  │         (Port 8080)             │
-│  - Linear / Notion   │                  │  - Workflow Orchestration       │
+│  - Linear / Notion   │                  │  - Attachment Ingestion & Gzip  │
 │    Design System     │                  │  - Jira Webhook Idempotency     │
-│  - Service Graph     │                  │  - State Management             │
-│  - Mock Email Inbox  │                  │  - Persistence & Audit Events   │
-│  - Recharts & Alerts │                  └────────────────┬────────────────┘
+│  - Log Investigation │                  │  - Comment Formatting (7-Sec)   │
+│    Card & Tabs       │                  │  - EmailJS Dispatch & Allowlist │
+│  - Service Graph     │                  │  - Persistence & Audit Events   │
+│  - Copyable Clones   │                  └────────────────┬────────────────┘
 └──────────────────────┘                                   │ REST (JSON)
                                                            ▼
                                           ┌─────────────────────────────────┐
                                           │     Python AI / Data Service    │
                                           │         (Port 8000)             │
-                                          │  - Log Correlation & Parsing    │
-                                          │  - Readiness Scoring Engine     │
-                                          │  - RCA & Dependency Mapping     │
-                                          │  - Similarity Matcher (TF-IDF)  │
-                                          │  - Test Suite & Curl Generator  │
+                                          │  - Safe Redactor & Quarantine   │
+                                          │  - Line-Referenced Evidence     │
+                                          │  - Multi-Signal Repo Discovery  │
+                                          │  - NVIDIA NIM (Prompt Defense)  │
+                                          │  - Deterministic AI Fallback    │
                                           └─────────────────────────────────┘
 ```
 
 ---
 
-## ⚡ Features
+## ⚡ Core Features
 
-1. **Deterministic & Contextual Ticket Readiness Engine**:
-   - Evaluates 9 diagnostic dimensions (Logs, API Details, Payloads, Environment, Error Pattern, Expected vs Actual, etc.).
-   - Configurable weighted policy (Total = 100).
-2. **Autonomous Log Analysis & Multi-Service Correlation**:
-   - Parses timestamps, log levels, service tags, exception types, HTTP endpoints, status codes, and correlates by `correlationId`.
-3. **Automated Root Cause Diagnosis (RCA)**:
-   - High/Medium/Low confidence scoring (e.g. 94% confidence for duplicate NFID conflicts).
-   - Traceable evidence base, developer investigation steps, and recommended remediation.
-4. **Service Dependency Graph**:
-   - Visualizes request topology across microservice boundaries (Gateway → Circuit Service → WFM → PEDS → DB) and highlights the failing node.
-5. **Safe Reproduction Suite**:
-   - Generates executable, 100% synthetic safe `cURL` commands and Postman collection definitions.
-6. **Automated Test Case Generation**:
-   - Synthesizes 5 structured test cases (Unit, Integration, API) including Java JUnit 5 & Mockito test skeletons.
-7. **Similar Incident Detection & Incident Memory**:
-   - Matches incoming incident signatures against historical resolved incidents with similarity percentage and resolution explanations.
-8. **Automated Jira Comments & Reporter Email Notifications**:
-   - Posts formatted triage and investigation comments to Jira.
-   - Dispatches email alerts with built-in Mock Email Viewer for presentation without live SMTP.
+1. **Autonomous Log Attachment Ingestion & Safety**:
+   - Ingests `.log`, `.txt`, `.json`, `.jsonl`, and `.log.gz` via Jira webhook, manual drag-and-drop, or text paste.
+   - Guarded with 10MB upload limits, 20MB decompression limits (gzip bomb defense), 1,000 line ceilings, and SHA-256 idempotency.
+   - Detects private keys and triggers automatic quarantine (`NEEDS_REVIEW`) to block external exposure.
+
+2. **Line-Referenced Log Intelligence & Evidence Base**:
+   - Deterministic log parsing maps exact line numbers, timestamps, log levels, HTTP codes (400, 401, 404, 409, 429, 500, 502, 503, 504), and correlation IDs.
+   - Computes weighted confidence scores without synthetic hallucinations.
+
+3. **Approved Repository Discovery & Git Clones**:
+   - Multi-signal matching maps failures to 7 approved synthetic Northstar microservice repositories.
+   - Generates 1-click copyable `git clone` and `git clone --branch main` commands.
+
+4. **NVIDIA NIM LLM Adapter & Injection Defenses**:
+   - Supports OpenAI-compatible completions via NVIDIA Cloud Functions / NIM (e.g. `meta/llama-3.1-70b-instruct`).
+   - Hardened with system prompt isolation, injection phrase scrubbing, strict JSON schema output validation, and seamless fallback to deterministic reasoning when offline.
+
+5. **Standardized 7-Section Jira Comment Engine**:
+   - Synthesizes formatted Jira markdown reports with executive summary, root cause, line evidence, clone commands, remediation advice, and synthetic disclaimers.
+
+6. **EmailJS Incident Notifications & Allowlist**:
+   - Dispatches HTML/Text incident alerts via EmailJS REST API.
+   - Protected by recipient domain allowlisting (`EMAILJS_ALLOWED_RECIPIENTS`) and built-in simulation fallback mode.
+
+7. **Interactive Operations Dashboard**:
+   - Real-time React 18 UI featuring ticket search, readiness scores, log viewers, live comment posting, and test email dispatches.
 
 ---
 
-## 🔒 Security & Safe Synthetic Data Policy
+## 🔒 Confidentiality & Safe Synthetic Data Policy
 
-For hackathons and prototyping, JiraPilot AI strictly complies with security boundaries:
-- **Zero Real Data**: Uses ONLY synthetic data and sanitized test identifiers (`TEST-NFID-1001`, `TEST-CKT-1001`, `CORR-1001`).
-- **Zero Hardcoded Secrets**: All credentials and API tokens are dynamically read from environment variables or `.env`.
-- **Sensitive Data Masking**: Automatic redacting of potential keys, tokens, or personal identifiers in telemetry.
+This project strictly adheres to public-safe hackathon standards:
+- **Exclusively Synthetic**: Uses independently created services, mock repositories (`northstar-labs`), and synthetic project key `NOVA`.
+- **Zero Real Data**: No proprietary employer or client source code, logs, endpoints, or credentials are used.
+- **Zero Committed Secrets**: `.env` is git-ignored, all secrets use placeholders, and the repository is verified using `scripts/scan_secrets_and_compliance.py`.
 
 ---
 
@@ -120,92 +129,38 @@ Open your browser at **[http://localhost:3000](http://localhost:3000)**.
 
 ---
 
-## 🐳 Running with Docker Compose
+## 📚 Detailed Documentation
 
-```bash
-docker compose up --build
+- [Log Intelligence & Safety Guide](docs/log-analysis.md)
+- [Repository Discovery & Matching Strategy](docs/repository-discovery.md)
+- [Jira Cloud Integration & Webhook Ingestion](docs/jira-integration.md)
+- [NVIDIA NIM Setup & Injection Defenses](docs/nvidia-setup.md)
+- [EmailJS Notifications & Verification](docs/emailjs-setup.md)
+- [Troubleshooting & FAQ](docs/troubleshooting.md)
+- [Enterprise Service Catalog](docs/enterprise-service-catalog.md)
+
+---
+
+## 🧪 Test Execution & Verification
+
+Run the automated test suites across all layers:
+
+```powershell
+# 1. Python AI Service Tests (11/11 tests pass)
+cd ai-service
+pytest tests/
+
+# 2. Java Spring Boot Unit & Integration Tests (14/14 tests pass)
+cd backend
+mvn test
+
+# 3. Frontend TypeScript & Production Build
+cd frontend
+npm run build
+
+# 4. Fixture Validation Script
+python scripts/validate_fixtures.py
+
+# 5. Secret & Compliance Security Scan (0 violations)
+python scripts/scan_secrets_and_compliance.py
 ```
-
-Access:
-- **Frontend Dashboard**: `http://localhost:3000`
-- **Backend API**: `http://localhost:8080`
-- **Python AI Service**: `http://localhost:8000`
-- **PostgreSQL Database**: `localhost:5432`
-
----
-
-## 🎯 Step-by-Step Hackathon Demonstration Script
-
-### Step 1: Open Dashboard
-Navigate to `http://localhost:3000`. You will see the **AI Engineering Operations Dashboard** with live KPI stat cards and visual analytics.
-
-### Step 2: Load Demo Dataset
-Click the **"Load Demo Data"** button in the top navigation bar. Four synthetic incident tickets (`HACK-1001` to `HACK-1004`) will be populated.
-
-### Step 3: Inspect Complete Incident (HACK-1001 — Duplicate NFID)
-1. Click on **HACK-1001** (`Circuit creation API failing`).
-2. Notice:
-   - **Readiness Score**: `100/100` (Status: `READY` → `INVESTIGATED`).
-   - **Root Cause**: `Duplicate NFID received from upstream NTLS integration causing unique constraint violation in PEDS DB.` (Confidence: `94%`).
-   - **Service Graph**: Highlights `PEDS Service` as the failure point.
-   - **Reproduction**: Copy synthetic `cURL` command with 1-click.
-   - **Generated Test Cases**: Review `TC-001` through `TC-005` with Java JUnit 5 code snippet.
-   - **Similar Historical Incidents**: Shows match with `HACK-102` (91% similarity).
-   - **Jira Comment**: View structured investigation comment and click **"Post to Jira"**.
-
-### Step 4: Inspect Incomplete Incident (HACK-1002 — Missing Diagnostics)
-1. Navigate back and click on **HACK-1002** (`API is failing. Please check.`).
-2. Notice:
-   - **Readiness Score**: `30/100` (Status: `WAITING_FOR_INFORMATION`).
-   - Diagnostic checklist shows missing **Logs**, **API Details**, and **Request Payload**.
-   - **Jira Comment**: Formatted warning comment asking reporter for missing items.
-   - Open **Mock Email Viewer** (Mail icon in navbar) to inspect the email notification dispatched to `bob.developer@example.com`.
-
-### Step 5: Live Autonomous Re-Triage & Recovery
-1. Inside **HACK-1002**, click **"Add Missing Diagnostics to Resume"**.
-2. Click **"Fill Sample Diagnostic Logs"** and click **"Submit & Trigger Autonomous Re-Triage"**.
-3. Watch the system automatically re-validate the issue, elevate readiness to `100%`, transition state to `READY`, and trigger root cause analysis!
-
----
-
-## ⚙️ Real Atlassian Jira Cloud Integration
-
-To connect to a live Jira Cloud instance instead of demo mode:
-
-1. In `.env`, set:
-   ```ini
-   DEMO_MODE=false
-   JIRA_BASE_URL=https://your-domain.atlassian.net
-   JIRA_EMAIL=your-email@example.com
-   JIRA_API_TOKEN=your-atlassian-api-token
-   JIRA_PROJECT_KEY=HACK
-   ```
-2. In Atlassian Jira Cloud:
-   - Navigate to **Settings > System > Webhooks**.
-   - Create Webhook URL pointing to: `https://your-public-url/api/webhooks/jira`
-   - Select Events: `Issue created`, `Issue updated`.
-
----
-
-## 🧪 Test Execution Verification
-
-- **Python AI Service Tests**:
-  ```powershell
-  cd ai-service
-  pytest tests/
-  ```
-  *(6/6 passed)*
-
-- **Java Spring Boot Tests**:
-  ```powershell
-  cd backend
-  mvn test
-  ```
-  *(6/6 passed)*
-
-- **Frontend Build**:
-  ```powershell
-  cd frontend
-  npm run build
-  ```
-  *(Built without errors)*

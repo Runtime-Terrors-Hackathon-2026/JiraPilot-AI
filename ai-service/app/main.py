@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.routers import validation, investigation, logs, similarity, testcases, reproduction, health
+from app.routers import validation, investigation, logs, similarity, testcases, reproduction, health, log_analysis, repositories
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -24,6 +24,8 @@ app.include_router(logs.router)
 app.include_router(similarity.router)
 app.include_router(testcases.router)
 app.include_router(reproduction.router)
+app.include_router(log_analysis.router)
+app.include_router(repositories.router)
 
 if __name__ == "__main__":
     import uvicorn

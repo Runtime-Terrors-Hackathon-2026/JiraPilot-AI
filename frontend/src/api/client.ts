@@ -130,4 +130,92 @@ export const api = {
     if (!res.ok) throw new Error('Failed to fetch knowledge');
     return res.json();
   },
+
+  // Attachments & Log Intelligence
+  async getAttachments(key: string): Promise<any[]> {
+    const res = await fetch(`${API_BASE}/issues/${key}/attachments`);
+    if (!res.ok) throw new Error('Failed to fetch attachments');
+    return res.json();
+  },
+
+  async uploadAttachmentFile(key: string, file: File): Promise<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${API_BASE}/issues/${key}/attachments/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to upload attachment');
+    }
+    return res.json();
+  },
+
+  async uploadAttachmentText(key: string, logText: string, filename = 'pasted_telemetry.log'): Promise<any> {
+    const res = await fetch(`${API_BASE}/issues/${key}/attachments/upload`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ logText, filename }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to process log telemetry');
+    }
+    return res.json();
+  },
+
+  async retryAttachment(id: number): Promise<any> {
+    const res = await fetch(`${API_BASE}/attachments/${id}/retry`, { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to retry attachment analysis');
+    return res.json();
+  },
+
+  async getCommentPreview(id: number): Promise<{ commentPreview: string }> {
+    const res = await fetch(`${API_BASE}/attachments/${id}/comment-preview`);
+    if (!res.ok) throw new Error('Failed to generate comment preview');
+    return res.json();
+  },
+
+  async postCommentToJira(id: number): Promise<{ success: boolean; message: string }> {
+    const res = await fetch(`${API_BASE}/attachments/${id}/post-comment`, { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to post comment to Jira');
+    return res.json();
+  },
+
+  async getEmailPreview(id: number): Promise<{ html: string; text: string; subject: string }> {
+    const res = await fetch(`${API_BASE}/attachments/${id}/email-preview`);
+    if (!res.ok) throw new Error('Failed to generate email preview');
+    return res.json();
+  },
+
+  async sendEmail(id: number): Promise<any> {
+    const res = await fetch(`${API_BASE}/attachments/${id}/send-email`, { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to dispatch investigation email');
+    return res.json();
+  },
+
+  async getNvidiaStatus(): Promise<any> {
+    try {
+      const res = await fetch('http://localhost:8000/api/v1/nvidia/status');
+      if (res.ok) return res.json();
+    } catch {}
+    return {
+      provider: 'nvidia',
+      enabled: false,
+      configured: false,
+      activeMode: 'deterministic_fallback',
+      model: 'meta/llama-3.1-70b-instruct'
+    };
+  },
+
+  async sendTestEmail(recipient: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/notifications/test-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recipient }),
+    });
+    if (!res.ok) throw new Error('Failed to send test email');
+    return res.json();
+  },
 };

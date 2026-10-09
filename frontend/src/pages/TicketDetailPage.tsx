@@ -5,6 +5,7 @@ import { ServiceGraph } from '../components/ServiceGraph';
 import { TimelineViewer } from '../components/TimelineViewer';
 import { TestCaseList } from '../components/TestCaseList';
 import { CurlViewer } from '../components/CurlViewer';
+import { LogInvestigationCard } from '../components/LogInvestigationCard';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -297,6 +298,13 @@ export const TicketDetailPage: React.FC<TicketDetailPageProps> = ({ issue, onBac
           </div>
         )}
       </div>
+
+      {/* Log Intelligence & Attachment Investigation Center */}
+      <LogInvestigationCard
+        issueKey={issue.jiraKey}
+        attachments={issue.attachments}
+        onRefresh={onRefresh}
+      />
 
       {/* Main Diagnostic Analysis Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -139,6 +139,44 @@ export interface JiraIssue {
   investigation?: InvestigationResult;
   notifications: MockEmail[];
   auditEvents: AuditEvent[];
+  attachments?: IssueAttachment[];
+}
+
+export interface IssueAttachment {
+  id: number;
+  attachmentId?: string;
+  filename: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  sha256Hash?: string;
+  status: 'RECEIVED' | 'VALIDATING' | 'ANALYZING' | 'COMPLETED' | 'NEEDS_REVIEW' | 'FAILED';
+  quarantined: boolean;
+  quarantineReason?: string;
+  primaryService?: string;
+  primaryEndpoint?: string;
+  primaryStatus?: number;
+  correlationId?: string;
+  probableRootCause?: string;
+  confidenceScore?: number;
+  confidenceCategory?: string;
+  recommendedRepo?: string;
+  cloneCommand?: string;
+  analysisSummary?: string;
+  analysisJson?: string;
+  jiraCommentPosted: boolean;
+  emailSent: boolean;
+  createdAt: string;
+  analyzedAt?: string;
+}
+
+export interface NvidiaStatus {
+  provider: string;
+  enabled: boolean;
+  configured: boolean;
+  model: string;
+  baseUrl: string;
+  timeoutSeconds: number;
+  activeMode: string;
 }
 
 export interface DashboardSummary {
@@ -183,3 +221,4 @@ export interface PolicySettings {
   autoEmailEnabled: boolean;
   autoInvestigateEnabled: boolean;
 }
+

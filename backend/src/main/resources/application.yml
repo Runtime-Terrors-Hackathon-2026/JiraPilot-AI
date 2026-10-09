@@ -39,11 +39,22 @@ jirapilot:
   demo-mode: ${DEMO_MODE:false}
   ai-service-url: ${AI_SERVICE_URL:http://localhost:8000}
   email-notifications-enabled: ${EMAIL_ENABLED:true}
+  max-attachment-size-bytes: ${MAX_ATTACHMENT_SIZE_BYTES:10485760}
+  max-log-lines: ${MAX_LOG_LINES:50000}
   jira:
     base-url: ${JIRA_BASE_URL:https://siva-shankaran.atlassian.net}
     email: ${JIRA_EMAIL:sshankaran202@gmail.com}
     api-token: ${JIRA_API_TOKEN:ATATT3xFfGF0V77ibTMyupkU2ZKioID2ObfgWyPKkIZTuzgbB3kLmfZ3dHFxCPtrrfvPqHgt4YAkWFKKa9OvlrpT2X94hnQOgDOBDjdP8XbB-BIL0jL4n_0reX8dthFpoY41KLi15Lr7e-RRpi8V0T4iViKMdKhiwgb9FORjTB-ctGG3TtN4Sjc=B408196B}
     project-key: ${JIRA_PROJECT_KEY:KAN}
+    auto-comment-enabled: ${JIRA_AUTO_COMMENT_ENABLED:false}
+  emailjs:
+    enabled: ${EMAILJS_ENABLED:false}
+    service-id: ${EMAILJS_SERVICE_ID:service_jirapilot}
+    template-id: ${EMAILJS_TEMPLATE_ID:template_investigation}
+    public-key: ${EMAILJS_PUBLIC_KEY:public_key_mock}
+    private-key: ${EMAILJS_PRIVATE_KEY:}
+    api-url: ${EMAILJS_API_URL:https://api.emailjs.com/api/v1.0/email/send}
+    allowed-recipients: ${EMAILJS_ALLOWED_RECIPIENTS:sshankaran202@gmail.com,reporter@example.com}
 
 logging:
   level:

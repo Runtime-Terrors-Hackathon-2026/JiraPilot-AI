@@ -46,6 +46,19 @@ def validate_incidents():
             
     print(f"[PASS] Synthetic incidents validated successfully: {len(incidents)} records checked in {data_path.name}")
 
+def validate_repositories():
+    schema_path = SCHEMAS_DIR / "repository-catalog.schema.json"
+    data_path = DEMO_DATA_DIR / "repositories.json"
+    
+    schema = load_json(schema_path)
+    data = load_json(data_path)
+    
+    assert isinstance(data, list), "Repositories catalog must be a list"
+    assert len(data) >= 6, f"Expected >= 6 repositories, found {len(data)}"
+    
+    jsonschema.validate(instance=data, schema=schema)
+    print(f"[PASS] Repository catalog validated successfully: {len(data)} repositories checked in {data_path.name}")
+
 def main():
     print("=" * 60)
     print(" Northstar Digital Systems - Fixture Validation Suite")
@@ -53,6 +66,7 @@ def main():
     try:
         validate_service_catalog()
         validate_incidents()
+        validate_repositories()
         print("=" * 60)
         print("All fixtures passed schema validation cleanly!")
         print("=" * 60)

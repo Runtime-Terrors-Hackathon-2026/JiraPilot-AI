@@ -1,0 +1,240 @@
+package com.jirapilot.service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jirapilot.model.entity.IssueAttachment;
+import com.jirapilot.model.entity.JiraIssue;
+import com.jirapilot.model.entity.NotificationLog;
+import com.jirapilot.model.enums.NotificationType;
+import com.jirapilot.repository.NotificationLogRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.*;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class EmailJsService {
+
+    private final NotificationLogRepository notificationLogRepository;
+    private final RestTemplate restTemplate = new RestTemplate();
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Value("${jirapilot.emailjs.service-id:service_jirapilot}")
+    private String serviceId;
+
+    @Value("${jirapilot.emailjs.template-id:template_investigation}")
+    private String templateId;
+
+    @Value("${jirapilot.emailjs.public-key:public_key_mock}")
+    private String publicKey;
+
+    @Value("${jirapilot.emailjs.private-key:}")
+    private String privateKey;
+
+    @Value("${jirapilot.emailjs.enabled:false}")
+    private boolean emailJsEnabled;
+
+    @Value("${jirapilot.emailjs.api-url:https://api.emailjs.com/api/v1.0/email/send}")
+    private String apiUrl;
+
+    @Value("${jirapilot.emailjs.allowed-recipients:sshankaran202@gmail.com,reporter@example.com}")
+    private String allowedRecipientsStr;
+
+    /**
+     * Checks if a recipient is allowlisted.
+     */
+    public boolean isRecipientAllowed(String email) {
+        if (email == null) return false;
+        List<String> allowed = Arrays.asList(allowedRecipientsStr.split(","));
+        for (String a : allowed) {
+            if (a.trim().equalsIgnoreCase(email.trim()) || a.trim().equals("*")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Generates a preview HTML and plain text for the investigation email.
+     */
+    public Map<String, String> generateEmailPreview(JiraIssue issue, IssueAttachment attachment) {
+        String key = issue.getJiraKey();
+        String summary = issue.getSummary();
+        String rootCause = attachment.getProbableRootCause() != null ? attachment.getProbableRootCause() : "Analysis in progress";
+        String service = attachment.getPrimaryService() != null ? attachment.getPrimaryService() : "Unknown service";
+        String endpoint = attachment.getPrimaryEndpoint() != null ? attachment.getPrimaryEndpoint() : "Unknown endpoint";
+        String repo = attachment.getRecommendedRepo() != null ? attachment.getRecommendedRepo() : "None";
+        String clone = attachment.getCloneCommand() != null ? attachment.getCloneCommand() : "N/A";
+
+        String html = "<!DOCTYPE html><html><body style='font-family: -apple-system, sans-serif; color: #1e293b;'>" +
+                "<div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;'>" +
+                "<div style='background: #0284c7; color: white; padding: 16px; border-radius: 6px 6px 0 0;'>" +
+                "<h2 style='margin: 0;'>JiraPilot AI — Log Investigation Report</h2>" +
+                "<p style='margin: 4px 0 0 0;'>Ticket: <strong>" + key + "</strong> | Northstar Digital Systems</p></div>" +
+                "<div style='padding: 20px 0;'>" +
+                "<p>Hello,</p>" +
+                "<p>Automated log intelligence has completed analysis for <strong>" + key + " (" + summary + ")</strong>.</p>" +
+                "<table style='width: 100%; border-collapse: collapse; margin: 16px 0;'>" +
+                "<tr style='background: #f8fafc;'><td style='padding: 8px; font-weight: bold;'>Suspected Service:</td><td style='padding: 8px;'>" + service + "</td></tr>" +
+                "<tr><td style='padding: 8px; font-weight: bold;'>Detected API:</td><td style='padding: 8px;'><code>" + endpoint + "</code></td></tr>" +
+                "<tr style='background: #f8fafc;'><td style='padding: 8px; font-weight: bold;'>Probable Root Cause:</td><td style='padding: 8px;'>" + rootCause + "</td></tr>" +
+                "<tr><td style='padding: 8px; font-weight: bold;'>Recommended Codebase:</td><td style='padding: 8px;'>" + repo + "</td></tr>" +
+                "</table>" +
+                "<div style='background: #0f172a; color: #38bdf8; padding: 12px; border-radius: 6px; font-family: monospace;'>" +
+                clone + "</div>" +
+                "<p style='margin-top: 20px;'><strong>Next Action:</strong> Clone the repository above and inspect referenced line numbers.</p>" +
+                "<p style='color: #64748b; font-size: 12px; border-top: 1px solid #e2e8f0; padding-top: 12px;'>" +
+                "Generated by JiraPilot AI synthetic demo. External AI findings are suggestions and require developer verification.</p>" +
+                "</div></div></body></html>";
+
+        String text = "JiraPilot AI — Log Investigation Report\n\n" +
+                "Ticket: " + key + "\n" +
+                "Summary: " + summary + "\n\n" +
+                "Suspected Service: " + service + "\n" +
+                "Detected API: " + endpoint + "\n" +
+                "Probable Root Cause: " + rootCause + "\n" +
+                "Recommended Codebase: " + repo + "\n" +
+                "Clone: " + clone + "\n\n" +
+                "Generated by JiraPilot AI.";
+
+        return Map.of("html", html, "text", text, "subject", "JiraPilot AI Investigation Completed — " + key);
+    }
+
+    /**
+     * Sends investigation notification via EmailJS REST API or records as SIMULATED.
+     */
+    @Transactional
+    public NotificationLog sendInvestigationEmail(JiraIssue issue, IssueAttachment attachment) {
+        String recipient = issue.getReporter() != null ? issue.getReporter() : "sshankaran202@gmail.com";
+        Map<String, String> preview = generateEmailPreview(issue, attachment);
+        String subject = preview.get("subject");
+        String content = preview.get("text");
+
+        // Check allowlist
+        if (!isRecipientAllowed(recipient)) {
+            log.warn("[EMAILJS] Recipient '{}' is not in allowed recipients list ({}). Suppressing email.", recipient, allowedRecipientsStr);
+            NotificationLog logEntry = NotificationLog.builder()
+                    .jiraIssue(issue)
+                    .type(NotificationType.INVESTIGATION_COMPLETE_EMAIL)
+                    .recipient(recipient)
+                    .subject(subject + " [SUPPRESSED]")
+                    .content("Email suppressed by recipient allowlist policy.")
+                    .status("BLOCKED_ALLOWLIST")
+                    .build();
+            return notificationLogRepository.save(logEntry);
+        }
+
+        String deliveryStatus = "SIMULATED";
+
+        if (emailJsEnabled) {
+            try {
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+
+                Map<String, Object> templateParams = new HashMap<>();
+                templateParams.put("to_email", recipient);
+                templateParams.put("issue_key", issue.getJiraKey());
+                templateParams.put("issue_summary", issue.getSummary());
+                templateParams.put("service_name", attachment.getPrimaryService());
+                templateParams.put("api_endpoint", attachment.getPrimaryEndpoint());
+                templateParams.put("root_cause", attachment.getProbableRootCause());
+                templateParams.put("clone_command", attachment.getCloneCommand());
+                templateParams.put("dashboard_url", "http://localhost:3000/tickets/" + issue.getJiraKey());
+
+                Map<String, Object> payload = new HashMap<>();
+                payload.put("service_id", serviceId);
+                payload.put("template_id", templateId);
+                payload.put("user_id", publicKey);
+                if (privateKey != null && !privateKey.isBlank()) {
+                    payload.put("accessToken", privateKey);
+                }
+                payload.put("template_params", templateParams);
+
+                HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
+                ResponseEntity<String> response = restTemplate.postForEntity(apiUrl, request, String.class);
+
+                if (response.getStatusCode().is2xxSuccessful()) {
+                    deliveryStatus = "SENT";
+                    log.info("[EMAILJS] Dispatched email successfully to {} for issue {}", recipient, issue.getJiraKey());
+                } else {
+                    deliveryStatus = "FAILED";
+                    log.warn("[EMAILJS] EmailJS API returned status {}: {}", response.getStatusCode(), response.getBody());
+                }
+            } catch (Exception e) {
+                log.warn("[EMAILJS] Delivery failed: {}. Falling back to SIMULATED status.", e.getMessage());
+                deliveryStatus = "FAILED";
+            }
+        } else {
+            log.info("[EMAILJS] EmailJS disabled (MOCK MODE). Notification recorded to Mock Email Viewer for {}.", recipient);
+        }
+
+        NotificationLog logEntry = NotificationLog.builder()
+                .jiraIssue(issue)
+                .type(NotificationType.INVESTIGATION_COMPLETE_EMAIL)
+                .recipient(recipient)
+                .subject(subject)
+                .content(content)
+                .status(deliveryStatus)
+                .build();
+
+        attachment.setEmailSent(deliveryStatus.equals("SENT") || deliveryStatus.equals("SIMULATED"));
+        return notificationLogRepository.save(logEntry);
+    }
+
+    /**
+     * Dispatches a test email for verification.
+     */
+    public Map<String, Object> sendTestEmail(String targetRecipient) {
+        String recipient = targetRecipient != null ? targetRecipient : "sshankaran202@gmail.com";
+        if (!isRecipientAllowed(recipient)) {
+            return Map.of("status", "REJECTED", "message", "Recipient is not on allowed list: " + allowedRecipientsStr);
+        }
+
+        if (!emailJsEnabled) {
+            return Map.of(
+                    "status", "MOCK_SUCCESS",
+                    "mode", "SIMULATED",
+                    "message", "EmailJS is currently in MOCK MODE (EMAILJS_ENABLED=false). Email saved to Mock Email Viewer.",
+                    "recipient", recipient
+            );
+        }
+
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            Map<String, Object> templateParams = Map.of(
+                    "to_email", recipient,
+                    "issue_key", "TEST-NOVA",
+                    "issue_summary", "EmailJS Test Verification - JiraPilot AI",
+                    "message", "This is an automated test message from JiraPilot AI."
+            );
+
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("service_id", serviceId);
+            payload.put("template_id", templateId);
+            payload.put("user_id", publicKey);
+            if (privateKey != null && !privateKey.isBlank()) {
+                payload.put("accessToken", privateKey);
+            }
+            payload.put("template_params", templateParams);
+
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
+            ResponseEntity<String> response = restTemplate.postForEntity(apiUrl, request, String.class);
+
+            return Map.of(
+                    "status", response.getStatusCode().is2xxSuccessful() ? "SUCCESS" : "ERROR",
+                    "statusCode", response.getStatusCode().value(),
+                    "response", response.getBody() != null ? response.getBody() : "OK"
+            );
+        } catch (Exception e) {
+            return Map.of("status", "ERROR", "message", e.getMessage());
+        }
+    }
+}

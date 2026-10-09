@@ -41,6 +41,38 @@ public class IssueResponseDto {
     private InvestigationResultDto investigation;
     private List<MockEmailDto> notifications;
     private List<AuditEventDto> auditEvents;
+    private List<IssueAttachmentDto> attachments;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class IssueAttachmentDto {
+        private Long id;
+        private String attachmentId;
+        private String filename;
+        private String mimeType;
+        private Long sizeBytes;
+        private String sha256Hash;
+        private String status;
+        private boolean quarantined;
+        private String quarantineReason;
+        private String primaryService;
+        private String primaryEndpoint;
+        private Integer primaryStatus;
+        private String correlationId;
+        private String probableRootCause;
+        private Double confidenceScore;
+        private String confidenceCategory;
+        private String recommendedRepo;
+        private String cloneCommand;
+        private String analysisSummary;
+        private String analysisJson;
+        private boolean jiraCommentPosted;
+        private boolean emailSent;
+        private LocalDateTime createdAt;
+        private LocalDateTime analyzedAt;
+    }
 
     @Data
     @Builder

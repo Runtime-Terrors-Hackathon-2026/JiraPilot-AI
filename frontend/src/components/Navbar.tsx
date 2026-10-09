@@ -1,5 +1,6 @@
-import React from 'react';
-import { Bot, RefreshCw, Mail, Settings, Database, PlayCircle, Sparkles } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Bot, RefreshCw, Mail, Settings, Database, PlayCircle, Sparkles, Cpu } from 'lucide-react';
+import { api } from '../api/client';
 
 interface NavbarProps {
   currentView: 'dashboard' | 'knowledge';
@@ -22,6 +23,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSyncJira,
   loading,
 }) => {
+  const [aiStatus, setAiStatus] = useState<any>(null);
+
+  useEffect(() => {
+    api.getNvidiaStatus().then(setAiStatus).catch(() => {});
+  }, []);
   return (
     <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur border-b border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -69,6 +75,19 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Global Action Controls */}
         <div className="flex items-center space-x-2.5">
+          {/* AI Engine Status Pill */}
+          <div
+            className={`hidden lg:flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border ${
+              aiStatus?.configured
+                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                : 'bg-slate-800 text-slate-300 border-slate-700'
+            }`}
+            title={aiStatus?.configured ? `NVIDIA NIM Active: ${aiStatus?.model}` : 'Deterministic Fallback Engine active (offline safe)'}
+          >
+            <Cpu className={`w-3.5 h-3.5 ${aiStatus?.configured ? 'text-emerald-400' : 'text-slate-400'}`} />
+            <span>{aiStatus?.configured ? 'NVIDIA NIM Active' : 'Deterministic AI Fallback'}</span>
+          </div>
+
           <button
             onClick={onSyncJira}
             disabled={loading}

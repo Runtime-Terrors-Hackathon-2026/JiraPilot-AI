@@ -109,6 +109,10 @@ public class JiraIssue {
     @Builder.Default
     private List<AuditEvent> auditEvents = new ArrayList<>();
 
+    @OneToMany(mappedBy = "jiraIssue", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<IssueAttachment> attachments = new ArrayList<>();
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 

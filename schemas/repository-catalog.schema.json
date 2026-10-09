@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RepositoryCatalog",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "repositoryId",
+      "displayName",
+      "serviceName",
+      "ownerGroup",
+      "approvedCloneUrl",
+      "defaultBranch",
+      "supportedEndpoints",
+      "languages",
+      "frameworks",
+      "description",
+      "isApproved"
+    ],
+    "properties": {
+      "repositoryId": { "type": "string" },
+      "displayName": { "type": "string" },
+      "serviceName": { "type": "string" },
+      "ownerGroup": { "type": "string" },
+      "approvedCloneUrl": { "type": "string" },
+      "defaultBranch": { "type": "string" },
+      "supportedEndpoints": { "type": "array", "items": { "type": "string" } },
+      "endpointPatterns": { "type": "array", "items": { "type": "string" } },
+      "packagePrefixes": { "type": "array", "items": { "type": "string" } },
+      "languages": { "type": "array", "items": { "type": "string" } },
+      "frameworks": { "type": "array", "items": { "type": "string" } },
+      "description": { "type": "string" },
+      "verifiedModules": { "type": "array", "items": { "type": "string" } },
+      "documentationLinks": { "type": "array", "items": { "type": "string" } },
+      "lastVerified": { "type": "string" },
+      "isApproved": { "type": "boolean" }
+    }
+  }
+}
