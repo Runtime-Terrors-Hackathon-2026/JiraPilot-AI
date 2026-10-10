@@ -25,6 +25,7 @@ import { EmailViewerModal } from './components/EmailViewerModal';
 import { PolicyModal } from './components/PolicyModal';
 import { useToast } from './components/ui/Toast';
 import { ErrorState } from './components/ui/primitives';
+import { Server, Link2 } from 'lucide-react';
 
 export const App: React.FC = () => {
   const { push } = useToast();
@@ -39,6 +40,7 @@ export const App: React.FC = () => {
   const [backendReachable, setBackendReachable] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [customBackendUrl, setCustomBackendUrl] = useState('');
 
   // Filters & Search
   const [search, setSearch] = useState('');
@@ -171,9 +173,50 @@ export const App: React.FC = () => {
       onOpenSimulate={() => setIsSimulateOpen(true)}
       loading={loading}
     >
-      {error && !backendReachable && (
-        <div className="mb-6">
-          <ErrorState message={error} onRetry={fetchData} />
+      {(!backendReachable || error) && (
+        <div className="mb-6 rounded-2xl border border-indigo-500/30 bg-[#0c1427]/95 p-4 shadow-2xl backdrop-blur-md">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                <Server className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-white">Backend Connection Setup</h4>
+                  <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-300 border border-amber-500/30">
+                    {backendReachable ? 'Reconnecting' : 'Offline / Awaiting URL'}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs text-indigo-300/80">
+                  Current Target: <code className="rounded bg-black/50 px-1.5 py-0.5 font-mono text-cyan-300">{api.getApiBase()}</code>
+                </p>
+                <p className="text-[11px] text-indigo-400/70">
+                  If deployed on Vercel, paste your live Render backend URL (e.g. <code className="text-white">https://jirapilot-backend.onrender.com</code>) to connect immediately.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                placeholder="https://your-backend.onrender.com"
+                value={customBackendUrl}
+                onChange={(e) => setCustomBackendUrl(e.target.value)}
+                className="w-full sm:w-64 rounded-xl border border-indigo-500/30 bg-[#050814] px-3 py-2 text-xs text-white placeholder-indigo-400/40 focus:border-cyan-400 focus:outline-none font-mono"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (customBackendUrl.trim()) {
+                    api.setApiBaseOverride(customBackendUrl.trim());
+                  }
+                }}
+                className="shrink-0 flex items-center gap-1.5 rounded-xl bg-cyan-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-cyan-500 transition-colors shadow-lg hover:shadow-cyan-500/20"
+              >
+                <Link2 className="h-3.5 w-3.5" />
+                <span>Connect</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

@@ -10,16 +10,40 @@ import {
   NvidiaStatus
 } from '../types';
 
-const getApiBase = (): string => {
+export const getApiBase = (): string => {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('jirapilot_api_base_url');
+    if (saved && saved.trim()) {
+      const trimmed = saved.trim().replace(/\/+$/, '');
+      return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+    }
+  }
+
   const envUrl = ((import.meta as any)?.env?.VITE_API_BASE_URL as string | undefined)?.trim();
-  if (!envUrl) return '/api';
-  const trimmed = envUrl.replace(/\/+$/, '');
-  return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+  if (envUrl) {
+    const trimmed = envUrl.replace(/\/+$/, '');
+    return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+  }
+
+  return '/api';
+};
+
+export const setApiBaseOverride = (url: string) => {
+  if (typeof window !== 'undefined') {
+    if (!url || !url.trim()) {
+      localStorage.removeItem('jirapilot_api_base_url');
+    } else {
+      localStorage.setItem('jirapilot_api_base_url', url.trim());
+    }
+    window.location.reload();
+  }
 };
 
 const API_BASE = getApiBase();
 
 export const api = {
+  getApiBase,
+  setApiBaseOverride,
   // Issues
   async getIssues(): Promise<JiraIssue[]> {
     const res = await fetch(`${API_BASE}/issues`);

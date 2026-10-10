@@ -8,6 +8,8 @@ import com.jirapilot.service.IssueService;
 import com.jirapilot.service.LogAttachmentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,6 +29,20 @@ public class DemoController {
     private final IssueService issueService;
     private final LogAttachmentService logAttachmentService;
     private final JiraIssueRepository jiraIssueRepository;
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void onStartup() {
+        try {
+            if (jiraIssueRepository.count() == 0) {
+                log.info("[STARTUP] Database is empty on boot. Automatically populating 7 incident scenarios...");
+                loadDemoData();
+            } else {
+                log.info("[STARTUP] Database already initialized with {} incident records.", jiraIssueRepository.count());
+            }
+        } catch (Exception e) {
+            log.warn("[STARTUP] Auto-seeding skipped or failed: {}", e.getMessage());
+        }
+    }
 
     @PostMapping("/load-data")
     public ResponseEntity<Map<String, Object>> loadDemoData() {
