@@ -13,6 +13,7 @@ const TITLES: Record<AppView, { title: string; crumb: string }> = {
   knowledge: { title: 'Knowledge Base', crumb: 'Similar Incidents' },
   notifications: { title: 'Notifications', crumb: 'Notifications' },
   settings: { title: 'Settings & Integration Health', crumb: 'Settings' },
+  'api-flow': { title: 'API Flow Visualization', crumb: 'API Flow' },
 };
 
 interface TopBarProps {

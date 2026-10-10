@@ -5,7 +5,78 @@ export type AppView =
   | 'repos'
   | 'knowledge'
   | 'notifications'
-  | 'settings';
+  | 'settings'
+  | 'api-flow';
+
+export interface ApiFlowNode {
+  id: string;
+  label: string;
+  type: 'client' | 'api' | 'service' | 'response';
+  serviceName: string;
+  endpoint?: string;
+  method?: string;
+  statusCode?: number;
+  statusText?: string;
+  responseTimeMs?: number;
+  status: 'HEALTHY' | 'DEGRADED' | 'FAILED' | 'UNKNOWN';
+  isFailurePoint: boolean;
+  timestamp?: string;
+  correlationId?: string;
+  traceId?: string;
+  sourceLog?: string;
+  lineNumber?: number;
+  errorMessage?: string;
+  possibleCause?: string;
+  confidenceLevel?: string;
+  evidenceReference?: string;
+  relatedLogs?: Array<{ line: number; text: string }>;
+  requestPayload?: string;
+  responsePayload?: string;
+  curlCommand?: string;
+  isObserved: boolean;
+  inferredReason?: string;
+  branch: 'main' | 'top' | 'bottom';
+  x: number;
+  y: number;
+}
+
+export interface ApiFlowEdge {
+  id: string;
+  source: string;
+  target: string;
+  label?: string;
+  status: 'NORMAL' | 'ERROR';
+  isObserved: boolean;
+  inferredReason?: string;
+  dashed?: boolean;
+}
+
+export interface ApiFlowTimelineStep {
+  stepNumber: number;
+  nodeId: string;
+  label: string;
+  service: string;
+  endpoint?: string;
+  status: 'HEALTHY' | 'DEGRADED' | 'FAILED';
+  duration?: string;
+  isFailurePoint: boolean;
+}
+
+export interface ApiFlowMetrics {
+  totalApis: number;
+  successfulCount: number;
+  errorCount: number;
+  avgResponseTimeMs: number | null;
+  hasInferredData: boolean;
+}
+
+export interface ApiFlowGraphData {
+  nodes: ApiFlowNode[];
+  edges: ApiFlowEdge[];
+  timeline: ApiFlowTimelineStep[];
+  metrics: ApiFlowMetrics;
+  evidenceSummary: string[];
+}
 
 export type IssueFilter = 'ALL' | 'WAITING' | 'READY' | 'INVESTIGATING' | 'INVESTIGATED';
 

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { FileText, RefreshCw, Send, Terminal, Upload } from 'lucide-react';
+import { FileText, RefreshCw, Send, Terminal, Upload, Network } from 'lucide-react';
 import { IssueAttachment } from '../types';
 import { api } from '../api/client';
 import { Button, Card, CloneCommand, Dialog, EmptyState, StatusBadge } from './ui/primitives';
@@ -11,6 +11,7 @@ interface Props {
   issueKey: string;
   attachments?: IssueAttachment[];
   onRefresh: () => void;
+  onExploreApiFlow?: (issueKey: string) => void;
 }
 
 function parseAnalysis(att?: IssueAttachment) {
@@ -22,7 +23,7 @@ function parseAnalysis(att?: IssueAttachment) {
   }
 }
 
-export const LogInvestigationCard: React.FC<Props> = ({ issueKey, attachments = [], onRefresh }) => {
+export const LogInvestigationCard: React.FC<Props> = ({ issueKey, attachments = [], onRefresh, onExploreApiFlow }) => {
   const { push } = useToast();
   const [selectedAttId, setSelectedAttId] = useState<number | null>(attachments[0]?.id || null);
   const [uploading, setUploading] = useState(false);
@@ -113,7 +114,7 @@ export const LogInvestigationCard: React.FC<Props> = ({ issueKey, attachments = 
                   <Meta label="HTTP" value={activeAtt.primaryStatus ? `HTTP ${activeAtt.primaryStatus}` : undefined} />
                   <Meta label="Correlation ID" value={activeAtt.correlationId} />
                 </div>
-                <div className="rounded-lg border border-line p-4">
+                <div className="rounded-lg border border-line p-4 transition-colors hover:border-accent/40">
                   <div className="mb-2 flex items-center justify-between">
                     <h4 className="text-xs font-semibold uppercase tracking-wide text-muted">Evidence-backed hypothesis</h4>
                     <StatusBadge tone="warning">
@@ -122,7 +123,20 @@ export const LogInvestigationCard: React.FC<Props> = ({ issueKey, attachments = 
                   </div>
                   <p className="text-sm text-ink">{activeAtt.probableRootCause || 'Inconclusive — insufficient diagnostic telemetry.'}</p>
                   <p className="mt-2 text-xs text-muted">{activeAtt.analysisSummary}</p>
-                  <p className="mt-2 text-[11px] text-muted">This is a hypothesis from the analysis engine, not a confirmed root cause.</p>
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-line/60">
+                    <p className="text-[11px] text-muted">This is a hypothesis from the analysis engine, not a confirmed root cause.</p>
+                    {onExploreApiFlow && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => onExploreApiFlow(issueKey)}
+                        className="text-xs text-accent border-accent/30 bg-accent-soft hover:bg-accent hover:text-white transition-all flex items-center gap-1.5"
+                      >
+                        <Network className="h-3.5 w-3.5" />
+                        Explore API Flow &rarr;
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 {endpoints.length > 0 && (
                   <div className="rounded-lg border border-line p-4">

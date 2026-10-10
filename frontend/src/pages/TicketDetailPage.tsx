@@ -19,6 +19,7 @@ import {
   Sparkles,
   Copy,
   Check,
+  Network,
 } from 'lucide-react';
 import {
   Button,
@@ -36,12 +37,14 @@ interface TicketDetailPageProps {
   issue: JiraIssue;
   onBack: () => void;
   onRefresh: () => void;
+  onExploreApiFlow?: (key: string) => void;
 }
 
 export const TicketDetailPage: React.FC<TicketDetailPageProps> = ({
   issue,
   onBack,
   onRefresh,
+  onExploreApiFlow,
 }) => {
   const { push } = useToast();
   const [revalidating, setRevalidating] = useState(false);
@@ -224,6 +227,18 @@ export const TicketDetailPage: React.FC<TicketDetailPageProps> = ({
                 Post to Jira
               </Button>
             )}
+
+            {onExploreApiFlow && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => onExploreApiFlow(issue.jiraKey)}
+                className="border-indigo-500/30 text-accent hover:border-accent hover:bg-accent-soft"
+              >
+                <Network className="h-3.5 w-3.5 text-accent" />
+                API Flow Map
+              </Button>
+            )}
           </div>
         </div>
       </Card>
@@ -335,6 +350,7 @@ export const TicketDetailPage: React.FC<TicketDetailPageProps> = ({
         issueKey={issue.jiraKey}
         attachments={issue.attachments}
         onRefresh={onRefresh}
+        onExploreApiFlow={onExploreApiFlow}
       />
 
       {/* Main Diagnostic Analysis Grid */}

@@ -9,6 +9,7 @@ import {
   Settings,
   Ticket,
   FileSearch,
+  Network,
 } from 'lucide-react';
 import { AppView } from '../types';
 import { cn } from '../lib/cn';
@@ -27,6 +28,7 @@ interface SidebarProps {
 const NAV = [
   { id: 'overview' as const, label: 'Overview', icon: LayoutDashboard },
   { id: 'issues' as const, label: 'Jira Issues', icon: Ticket },
+  { id: 'api-flow' as const, label: 'API Flow Map', icon: Network },
   { id: 'logs' as const, label: 'Log Investigations', icon: FileSearch },
   { id: 'repos' as const, label: 'Repository Explorer', icon: GitBranch },
   { id: 'knowledge' as const, label: 'Knowledge Base', icon: BookOpen },

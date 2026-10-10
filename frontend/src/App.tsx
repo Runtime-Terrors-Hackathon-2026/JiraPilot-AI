@@ -19,6 +19,7 @@ import { KnowledgePage } from './pages/KnowledgePage';
 import { NotificationsPage } from './pages/NotificationsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TicketDetailPage } from './pages/TicketDetailPage';
+import { ApiFlowPage } from './pages/ApiFlowPage';
 import { SimulateModal } from './components/SimulateModal';
 import { EmailViewerModal } from './components/EmailViewerModal';
 import { PolicyModal } from './components/PolicyModal';
@@ -126,6 +127,21 @@ export const App: React.FC = () => {
     setSelectedIssueKey(newIssue.jiraKey);
   };
 
+  const [apiFlowIssueKey, setApiFlowIssueKey] = useState<string | null>(null);
+
+  const handleOpenApiFlow = (key?: string) => {
+    if (key) {
+      setApiFlowIssueKey(key);
+    } else if (selectedIssueKey) {
+      setApiFlowIssueKey(selectedIssueKey);
+    } else if (issues.length > 0) {
+      const target = issues.find((i) => i.status === 'INVESTIGATED' || i.investigation) || issues[0];
+      setApiFlowIssueKey(target.jiraKey);
+    }
+    setSelectedIssueKey(null);
+    setCurrentView('api-flow');
+  };
+
   const selectedIssue = issues.find((i) => i.jiraKey === selectedIssueKey);
 
   const unreadOrFailedEmails = emails.filter(
@@ -161,11 +177,26 @@ export const App: React.FC = () => {
         </div>
       )}
 
-      {selectedIssue ? (
+      {currentView === 'api-flow' ? (
+        <ApiFlowPage
+          issues={issues}
+          currentIssueKey={apiFlowIssueKey || selectedIssueKey}
+          onBack={() => {
+            if (apiFlowIssueKey) {
+              setSelectedIssueKey(apiFlowIssueKey);
+              setCurrentView('overview');
+            } else {
+              setCurrentView('overview');
+            }
+          }}
+          onSelectIssue={(key) => setApiFlowIssueKey(key)}
+        />
+      ) : selectedIssue ? (
         <TicketDetailPage
           issue={selectedIssue}
           onBack={() => setSelectedIssueKey(null)}
           onRefresh={fetchData}
+          onExploreApiFlow={handleOpenApiFlow}
         />
       ) : currentView === 'overview' ? (
         <DashboardPage
