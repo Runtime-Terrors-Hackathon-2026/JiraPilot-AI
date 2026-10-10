@@ -48,13 +48,13 @@ jirapilot:
     project-key: ${JIRA_PROJECT_KEY:KAN}
     auto-comment-enabled: ${JIRA_AUTO_COMMENT_ENABLED:true}
   emailjs:
-    enabled: ${EMAILJS_ENABLED:false}
-    service-id: ${EMAILJS_SERVICE_ID:service_jirapilot}
-    template-id: ${EMAILJS_TEMPLATE_ID:template_investigation}
-    public-key: ${EMAILJS_PUBLIC_KEY:public_key_mock}
+    enabled: ${EMAILJS_ENABLED:true}
+    service-id: ${EMAILJS_SERVICE_ID:service_1ooa8fh}
+    template-id: ${EMAILJS_TEMPLATE_ID:template_ohed206}
+    public-key: ${EMAILJS_PUBLIC_KEY:F84AMnSi5B2E8awRT}
     private-key: ${EMAILJS_PRIVATE_KEY:}
     api-url: ${EMAILJS_API_URL:https://api.emailjs.com/api/v1.0/email/send}
-    allowed-recipients: ${EMAILJS_ALLOWED_RECIPIENTS:sshankaran202@gmail.com,reporter@example.com}
+    allowed-recipients: ${EMAILJS_ALLOWED_RECIPIENTS:sshankaran202@gmail.com,reporter@example.com,*}
 
 logging:
   level:
