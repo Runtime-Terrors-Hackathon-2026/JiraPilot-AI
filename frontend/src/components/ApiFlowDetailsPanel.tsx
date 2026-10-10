@@ -11,6 +11,7 @@ import {
   Layers,
   ArrowRight,
   ExternalLink,
+  Code2,
 } from 'lucide-react';
 import { cn } from '../lib/cn';
 import { useToast } from './ui/Toast';
@@ -21,6 +22,7 @@ interface ApiFlowDetailsPanelProps {
   nodes: ApiFlowNode[];
   onClose: () => void;
   onSelectNode: (node: ApiFlowNode) => void;
+  onInspectCode?: () => void;
 }
 
 export const ApiFlowDetailsPanel: React.FC<ApiFlowDetailsPanelProps> = ({
@@ -29,6 +31,7 @@ export const ApiFlowDetailsPanel: React.FC<ApiFlowDetailsPanelProps> = ({
   nodes,
   onClose,
   onSelectNode,
+  onInspectCode,
 }) => {
   const { push } = useToast();
   const [activeTab, setActiveTab] = useState<'overview' | 'logs' | 'payload' | 'related'>('overview');
@@ -237,6 +240,20 @@ export const ApiFlowDetailsPanel: React.FC<ApiFlowDetailsPanelProps> = ({
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Inspect Source Code Action */}
+            {onInspectCode && (
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={onInspectCode}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-gradient-to-r from-cyan-950/60 to-indigo-950/60 p-3 text-xs font-bold text-cyan-300 hover:border-cyan-400 hover:text-white transition-all shadow-lg hover:shadow-cyan-500/10 group"
+                >
+                  <Code2 className="h-4 w-4 text-cyan-400 group-hover:scale-110 transition-transform" />
+                  <span>Inspect Source Code &amp; Execution Path &rarr;</span>
+                </button>
               </div>
             )}
           </div>

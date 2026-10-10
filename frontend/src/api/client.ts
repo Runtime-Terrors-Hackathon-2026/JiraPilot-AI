@@ -228,4 +228,49 @@ export const api = {
     if (!res.ok) throw new Error('Failed to send test email');
     return res.json();
   },
+
+  // AI Code Investigation
+  async runCodeInvestigation(key: string, repoId?: string, serviceName?: string): Promise<any> {
+    const params = new URLSearchParams();
+    if (repoId) params.append('repositoryId', repoId);
+    if (serviceName) params.append('serviceName', serviceName);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const res = await fetch(`${API_BASE}/issues/${key}/code-investigation/run${qs}`, {
+      method: 'POST',
+    });
+    if (!res.ok) throw new Error('Failed to run code investigation');
+    return res.json();
+  },
+
+  async getCodeInvestigation(key: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/issues/${key}/code-investigation`);
+    if (!res.ok) throw new Error('Failed to fetch code investigation');
+    return res.json();
+  },
+
+  async generateDiff(key: string, payload: { investigationId?: string; repositoryId?: string; filePath?: string; targetMethod?: string }): Promise<any> {
+    const res = await fetch(`${API_BASE}/issues/${key}/code-investigation/generate-diff`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error('Failed to generate code diff');
+    return res.json();
+  },
+
+  async runRecommendedTests(key: string, command: string, testClass: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/issues/${key}/code-investigation/run-tests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ command, testClass }),
+    });
+    if (!res.ok) throw new Error('Failed to run recommended tests');
+    return res.json();
+  },
+
+  async getRepositoryFile(repoId: string, path: string): Promise<any> {
+    const res = await fetch(`${API_BASE}/issues/repository/${repoId}/file?path=${encodeURIComponent(path)}`);
+    if (!res.ok) throw new Error('Failed to fetch repository file');
+    return res.json();
+  },
 };

@@ -98,6 +98,19 @@ public class Investigation {
     @Column(columnDefinition = "TEXT")
     private String jiraInvestigationComment;
 
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String codeInvestigationJson;
+
+    @Column(length = 64)
+    private String codeInvestigationStatus;
+
+    @Column(length = 128)
+    private String matchedRepository;
+
+    @Column(length = 64)
+    private String inspectedRevision;
+
     @CreationTimestamp
     private LocalDateTime investigatedAt;
 }

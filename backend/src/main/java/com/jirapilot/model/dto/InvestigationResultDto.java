@@ -18,6 +18,7 @@ public class InvestigationResultDto {
     private String postmanJson;
     private List<Map<String, Object>> generatedTestCases;
     private List<Map<String, Object>> similarIncidents;
+    private Map<String, Object> codeInvestigation;
 
     @Data
     @Builder

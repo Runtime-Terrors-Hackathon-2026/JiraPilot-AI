@@ -15,6 +15,7 @@ import {
   Shield,
   Layers,
   ChevronDown,
+  Code2,
 } from 'lucide-react';
 import { formatDateTime } from '../lib/format';
 
@@ -23,6 +24,7 @@ interface ApiFlowPageProps {
   currentIssueKey?: string | null;
   onBack: () => void;
   onSelectIssue: (key: string) => void;
+  onInspectCode?: (key: string) => void;
 }
 
 export const ApiFlowPage: React.FC<ApiFlowPageProps> = ({
@@ -30,6 +32,7 @@ export const ApiFlowPage: React.FC<ApiFlowPageProps> = ({
   currentIssueKey,
   onBack,
   onSelectIssue,
+  onInspectCode,
 }) => {
   // Find current issue, fallback to first investigated or first available
   const activeIssue = useMemo(() => {
@@ -153,6 +156,18 @@ export const ApiFlowPage: React.FC<ApiFlowPageProps> = ({
               {formatDateTime(activeIssue.updatedAt || activeIssue.createdAt)}
             </span>
           </div>
+
+          {/* Direct Code Investigation Link */}
+          {onInspectCode && (
+            <button
+              type="button"
+              onClick={() => onInspectCode(activeIssue.jiraKey)}
+              className="flex items-center gap-1.5 rounded-xl border border-cyan-500/40 bg-gradient-to-r from-cyan-950/60 to-indigo-950/60 px-3.5 py-2 text-xs font-bold text-cyan-300 hover:border-cyan-400 hover:text-white transition-all shadow-lg hover:shadow-cyan-500/20 group"
+            >
+              <Code2 className="h-3.5 w-3.5 text-cyan-400 group-hover:scale-110 transition-transform" />
+              <span>Inspect Code</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -283,6 +298,7 @@ export const ApiFlowPage: React.FC<ApiFlowPageProps> = ({
             nodes={graphData.nodes}
             onClose={() => setSelectedNodeId(null)}
             onSelectNode={(node) => setSelectedNodeId(node.id)}
+            onInspectCode={() => onInspectCode?.(activeIssue.jiraKey)}
           />
         </div>
       </div>

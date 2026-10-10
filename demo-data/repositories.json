@@ -31,6 +31,11 @@
       "https://internal.northstar.example.com/docs/services/resource-inventory"
     ],
     "lastVerified": "2026-10-09T12:00:00Z",
+    "localPath": "mock-repositories/resource-inventory-service",
+    "currentRevision": "a9b47e2f",
+    "indexingStatus": "INDEXED",
+    "accessPermission": "READ_ONLY",
+    "lastIndexedAt": "2026-10-10T12:00:00Z",
     "isApproved": true
   },
   {
@@ -64,6 +69,11 @@
       "https://internal.northstar.example.com/docs/services/workflow-orchestrator"
     ],
     "lastVerified": "2026-10-09T12:00:00Z",
+    "localPath": "mock-repositories/workflow-orchestrator",
+    "currentRevision": "c3f8109d",
+    "indexingStatus": "INDEXED",
+    "accessPermission": "READ_ONLY",
+    "lastIndexedAt": "2026-10-10T12:00:00Z",
     "isApproved": true
   },
   {

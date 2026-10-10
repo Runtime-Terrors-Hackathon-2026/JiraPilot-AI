@@ -61,3 +61,8 @@ dist-ssr/
 # OS
 .DS_Store
 Thumbs.db
+
+# Scratch test media
+Sample_vdo.mp4
+sample_audio.wav
+test_vo.wav

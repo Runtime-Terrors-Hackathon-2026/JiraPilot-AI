@@ -165,12 +165,112 @@ export interface RcaData {
   incidentTimeline?: TimelineEvent[];
 }
 
+export type CodeInvestigationStatus =
+  | 'WAITING_FOR_REPOSITORY'
+  | 'REPOSITORY_ACCESS_REQUIRED'
+  | 'REPOSITORY_INDEXING'
+  | 'SEARCHING_SOURCE_CODE'
+  | 'TRACING_EXECUTION_PATH'
+  | 'GENERATING_DIAGNOSIS'
+  | 'READY_FOR_REVIEW'
+  | 'INSUFFICIENT_EVIDENCE'
+  | 'ANALYSIS_FAILED';
+
+export interface InspectedSymbol {
+  filePath: string;
+  className?: string;
+  methodName?: string;
+  startLine: number;
+  endLine: number;
+  snippet: string;
+  role: 'CONTROLLER' | 'SERVICE' | 'REPOSITORY' | 'CLIENT' | 'EXCEPTION_HANDLER' | 'TEST' | 'CONFIG';
+}
+
+export interface ExecutionPathStep {
+  stepNumber: number;
+  service: string;
+  className: string;
+  methodName: string;
+  filePath: string;
+  startLine: number;
+  endLine: number;
+  reason: string;
+  evidenceType: 'OBSERVED' | 'STATICALLY_INFERRED' | 'UNCERTAIN';
+  evidenceReference?: string;
+  snippet?: string;
+}
+
+export interface FailureLocation {
+  category: 'OBSERVED' | 'PROPAGATED' | 'ROOT_CAUSE';
+  title: string;
+  description: string;
+  filePath: string;
+  className: string;
+  methodName: string;
+  line: number;
+  snippet: string;
+  evidenceReason: string;
+}
+
+export interface CodeDiff {
+  filePath: string;
+  targetMethod: string;
+  originalSnippet: string;
+  proposedSnippet: string;
+  unifiedDiff: string;
+  purpose: string;
+  affectedRisks: string[];
+  affectedFiles: string[];
+}
+
+export interface TestRecommendation {
+  testType: 'UNIT' | 'INTEGRATION' | 'REGRESSION';
+  testClass: string;
+  testMethod: string;
+  filePath: string;
+  isExistingTest: boolean;
+  codeSnippet: string;
+  runCommand: string;
+  explanation: string;
+}
+
+export interface CodeInvestigationReport {
+  investigationId: string;
+  jiraKey: string;
+  status: CodeInvestigationStatus;
+  serviceName: string;
+  repositoryId: string;
+  repositoryName: string;
+  repositoryUrl: string;
+  revision: string;
+  accessPermission: string;
+  executiveSummary: string;
+  observedSymptoms: string[];
+  confirmedFacts: string[];
+  suspectedCause: string;
+  alternativeHypotheses: string[];
+  filesInspected: string[];
+  symbolsInspected: InspectedSymbol[];
+  executionPath: ExecutionPathStep[];
+  failureLocations: FailureLocation[];
+  recommendedFix: string;
+  codeDiff?: CodeDiff;
+  testRecommendations: TestRecommendation[];
+  confidenceScore: number;
+  confidenceExplanation: string;
+  limitations: string[];
+  unresolvedQuestions: string[];
+  timestamp: string;
+  isStale?: boolean;
+}
+
 export interface InvestigationResult {
   rca: RcaData;
   reproductionCurl: string;
   postmanJson: string;
   generatedTestCases: TestCase[];
   similarIncidents: SimilarIncident[];
+  codeInvestigation?: CodeInvestigationReport;
 }
 
 export interface MockEmail {

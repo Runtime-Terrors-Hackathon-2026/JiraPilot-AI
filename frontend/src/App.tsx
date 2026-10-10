@@ -190,6 +190,10 @@ export const App: React.FC = () => {
             }
           }}
           onSelectIssue={(key) => setApiFlowIssueKey(key)}
+          onInspectCode={(key) => {
+            setSelectedIssueKey(key);
+            setCurrentView('overview');
+          }}
         />
       ) : selectedIssue ? (
         <TicketDetailPage

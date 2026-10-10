@@ -1,0 +1,15 @@
+server:
+  port: 8084
+spring:
+  application:
+    name: resource-inventory-service
+  datasource:
+    url: jdbc:postgresql://inventory-db.internal:5432/resources
+    hikari:
+      maximum-pool-size: 20
+      connection-timeout: 30000
+circuit:
+  allocation:
+    default-prefix: DEMO-RESOURCE
+    enforce-unique: true
+    retry-attempts: 3

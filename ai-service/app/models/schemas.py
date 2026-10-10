@@ -167,3 +167,109 @@ class ReproductionResponse(BaseModel):
     curlCommand: str
     postmanPayload: Dict[str, Any]
     pythonRequestSnippet: str
+
+# ==========================================
+# AI Code Investigation Engine Schemas
+# ==========================================
+
+class InspectedSymbol(BaseModel):
+    filePath: str
+    className: Optional[str] = None
+    methodName: Optional[str] = None
+    startLine: int = 1
+    endLine: int = 1
+    snippet: str = ""
+    role: str = "SERVICE" # "CONTROLLER", "SERVICE", "REPOSITORY", "CLIENT", "EXCEPTION_HANDLER", "TEST", "CONFIG"
+
+class ExecutionPathStep(BaseModel):
+    stepNumber: int
+    service: str
+    className: str
+    methodName: str
+    filePath: str
+    startLine: int
+    endLine: int
+    reason: str
+    evidenceType: str = "STATICALLY_INFERRED" # "OBSERVED", "STATICALLY_INFERRED", "UNCERTAIN"
+    evidenceReference: Optional[str] = None
+    snippet: Optional[str] = None
+
+class FailureLocation(BaseModel):
+    category: str # "OBSERVED", "PROPAGATED", "ROOT_CAUSE"
+    title: str
+    description: str
+    filePath: str
+    className: str
+    methodName: str
+    line: int
+    snippet: str
+    evidenceReason: str
+
+class CodeDiff(BaseModel):
+    filePath: str
+    targetMethod: str
+    originalSnippet: str
+    proposedSnippet: str
+    unifiedDiff: str
+    purpose: str
+    affectedRisks: List[str] = []
+    affectedFiles: List[str] = []
+
+class TestRecommendation(BaseModel):
+    testType: str = "UNIT" # "UNIT", "INTEGRATION", "REGRESSION"
+    testClass: str
+    testMethod: str
+    filePath: str
+    isExistingTest: bool = False
+    codeSnippet: str
+    runCommand: str
+    explanation: str
+
+class CodeInvestigationReport(BaseModel):
+    investigationId: str
+    jiraKey: str
+    status: str = "READY_FOR_REVIEW"
+    serviceName: str
+    repositoryId: str
+    repositoryName: str
+    repositoryUrl: str
+    revision: str = "HEAD"
+    accessPermission: str = "READ_ONLY"
+    executiveSummary: str
+    observedSymptoms: List[str] = []
+    confirmedFacts: List[str] = []
+    suspectedCause: str
+    alternativeHypotheses: List[str] = []
+    filesInspected: List[str] = []
+    symbolsInspected: List[InspectedSymbol] = []
+    executionPath: List[ExecutionPathStep] = []
+    failureLocations: List[FailureLocation] = []
+    recommendedFix: str
+    codeDiff: Optional[CodeDiff] = None
+    testRecommendations: List[TestRecommendation] = []
+    confidenceScore: int = 85
+    confidenceExplanation: str = ""
+    limitations: List[str] = []
+    unresolvedQuestions: List[str] = []
+    timestamp: str = ""
+    isStale: bool = False
+
+class CodeInvestigationRequest(BaseModel):
+    ticket: TicketPayload
+    serviceName: Optional[str] = None
+    repositoryId: Optional[str] = None
+    parsedLogs: Optional[LogParseResponse] = None
+
+class GenerateDiffRequest(BaseModel):
+    investigationId: str
+    repositoryId: str
+    filePath: str
+    targetMethod: str
+
+class TestExecutionResult(BaseModel):
+    command: str
+    exitCode: int
+    stdout: str
+    passed: bool
+    durationMs: int
+    testedClass: str

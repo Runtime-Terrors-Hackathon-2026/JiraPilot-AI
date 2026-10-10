@@ -6,6 +6,7 @@ import { TimelineViewer } from '../components/TimelineViewer';
 import { TestCaseList } from '../components/TestCaseList';
 import { CurlViewer } from '../components/CurlViewer';
 import { LogInvestigationCard } from '../components/LogInvestigationCard';
+import { CodeInvestigationCard } from '../components/CodeInvestigationCard';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -351,6 +352,14 @@ export const TicketDetailPage: React.FC<TicketDetailPageProps> = ({
         attachments={issue.attachments}
         onRefresh={onRefresh}
         onExploreApiFlow={onExploreApiFlow}
+      />
+
+      {/* AI Code Investigation Center (Source-Code & Execution Path Tracing) */}
+      <CodeInvestigationCard
+        issueKey={issue.jiraKey}
+        initialReport={issue.investigation?.codeInvestigation}
+        onExploreApiFlow={onExploreApiFlow}
+        onRefreshParent={onRefresh}
       />
 
       {/* Main Diagnostic Analysis Grid */}

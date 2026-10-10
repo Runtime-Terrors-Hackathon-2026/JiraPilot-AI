@@ -151,6 +151,7 @@ public class IssueService {
                     .postmanJson(inv.getPostmanJson())
                     .generatedTestCases(safeDeserializeListMap(inv.getGeneratedTestCasesJson()))
                     .similarIncidents(safeDeserializeListMap(inv.getSimilarIncidentsJson()))
+                    .codeInvestigation(safeDeserializeMap(inv.getCodeInvestigationJson()))
                     .build();
         }
 

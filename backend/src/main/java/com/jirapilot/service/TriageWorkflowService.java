@@ -209,8 +209,18 @@ public class TriageWorkflowService {
         try {
             investigation.setGeneratedTestCasesJson(objectMapper.writeValueAsString(result.getGeneratedTestCases()));
             investigation.setSimilarIncidentsJson(objectMapper.writeValueAsString(result.getSimilarIncidents()));
+            
+            // AI Code Investigation stage
+            Map<String, Object> codeReport = aiClient.runCodeInvestigation(issue, null, rca != null ? rca.getAffectedService() : null);
+            if (codeReport != null && !codeReport.isEmpty()) {
+                investigation.setCodeInvestigationJson(objectMapper.writeValueAsString(codeReport));
+                investigation.setCodeInvestigationStatus((String) codeReport.getOrDefault("status", "READY_FOR_REVIEW"));
+                investigation.setMatchedRepository((String) codeReport.getOrDefault("repositoryId", "REPO-RES-INV"));
+                investigation.setInspectedRevision((String) codeReport.getOrDefault("revision", "a9b47e2f"));
+                result.setCodeInvestigation(codeReport);
+            }
         } catch (Exception e) {
-            log.warn("Failed to serialize test cases / similar incidents: {}", e.getMessage());
+            log.warn("Failed to serialize test cases / code investigation: {}", e.getMessage());
         }
 
         investigationRepository.save(investigation);
