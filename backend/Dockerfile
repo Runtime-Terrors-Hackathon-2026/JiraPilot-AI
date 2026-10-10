@@ -2,20 +2,18 @@
 # JiraPilot AI - Java 21 Spring Boot Backend Dockerfile for Render / Cloud
 # ==============================================================================
 
-# Stage 1: Build the Spring Boot JAR
+# Stage 1: Build the Spring Boot JAR with Google Cloud Maven Mirror
 FROM maven:3.9.6-eclipse-temurin-21-alpine AS build
 WORKDIR /app
 
-# Cache Maven dependencies layer
+# Copy settings.xml with Google Cloud Mirror to prevent HTTP 429 Rate Limiting
+COPY settings.xml .
 COPY pom.xml .
-RUN mvn dependency:go-offline -B
-
-# Copy source code and demo data assets
 COPY src ./src
 COPY demo-data ./demo-data
 
-# Build production executable JAR (skipping test execution for faster image build)
-RUN mvn clean package -DskipTests
+# Build production executable JAR using Google Cloud Mirror (no rate limits)
+RUN mvn clean package -DskipTests --settings settings.xml -B
 
 # Stage 2: Ultra-lightweight Production JRE Runtime
 FROM eclipse-temurin:21-jre-alpine

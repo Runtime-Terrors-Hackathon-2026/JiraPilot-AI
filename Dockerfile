@@ -5,16 +5,14 @@
 FROM maven:3.9.6-eclipse-temurin-21-alpine AS build
 WORKDIR /app
 
-# Cache Maven dependencies
+# Copy settings.xml with Google Cloud Mirror to prevent HTTP 429 Rate Limiting
+COPY settings.xml .
 COPY backend/pom.xml .
-RUN mvn dependency:go-offline -B
-
-# Copy backend source and demo data
 COPY backend/src ./src
 COPY demo-data ./demo-data
 
-# Build production executable JAR
-RUN mvn clean package -DskipTests
+# Build production executable JAR using Google Cloud Mirror
+RUN mvn clean package -DskipTests --settings settings.xml -B
 
 # Minimal production JRE runtime
 FROM eclipse-temurin:21-jre-alpine
