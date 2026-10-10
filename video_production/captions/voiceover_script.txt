@@ -1,0 +1,89 @@
+## JiraPilot AI — 60-Second Product Video: Voice-Over Script
+## Professional, clear, natural delivery. Calm, confident pace.
+## Total duration: 60 seconds
+
+---
+
+### SCENE 1  [0:00–0:05]  — The Problem
+
+"Every software incident starts with a question: where do we begin?"
+
+Delivery notes:
+  - Slow, deliberate pace. Slight pause after "question:".
+  - Tone: thoughtful, empathetic — not alarming.
+
+---
+
+### SCENE 2  [0:05–0:12]  — Jira Issue Created
+
+"JiraPilot AI turns a new Jira issue into a structured investigation."
+
+Delivery notes:
+  - Confident, clear. Emphasize "structured investigation."
+  - Pick up pace slightly from Scene 1.
+
+---
+
+### SCENE 3  [0:12–0:20]  — Ticket Readiness
+
+"It checks ticket readiness and helps developers request the details they need."
+
+Delivery notes:
+  - Measured, practical. "helps developers" is the key phrase.
+  - No urgency — this is a calm, efficient process.
+
+---
+
+### SCENE 4  [0:20–0:30]  — AI Log Analysis
+
+"It analyzes logs, connects related errors, and surfaces evidence behind likely failure points."
+
+Delivery notes:
+  - Slightly faster — more technical content.
+  - Stress "connects" and "evidence."
+  - Short natural pause between "errors" and "and surfaces."
+
+---
+
+### SCENE 5  [0:30–0:38]  — Repository Discovery
+
+"It recommends approved repositories and prepares copy-ready clone commands for debugging."
+
+Delivery notes:
+  - Practical and crisp. "approved repositories" matters — enterprise credibility.
+  - Smile slightly in voice on "copy-ready."
+
+---
+
+### SCENE 6  [0:38–0:47]  — Jira Comments & Email
+
+"It prepares readable investigation reports and keeps the team informed."
+
+Delivery notes:
+  - Warm, collaborative. "keeps the team informed" lands best with a brief pause before it.
+
+---
+
+### SCENE 7  [0:47–0:54]  — Unified Workspace
+
+"Evidence, next steps and investigation status stay in one place."
+
+Delivery notes:
+  - Clean and direct. No filler. Single breath.
+
+---
+
+### SCENE 8  [0:54–1:00]  — Closing Brand Reveal
+
+"Less repetitive triage. Clearer investigations. More time for developers to solve problems."
+
+Delivery notes:
+  - Deliberate, stately. One beat between each sentence.
+  - Fade voice naturally into silence before the 60-second mark.
+  - Do NOT rush — allow space for the final visual reveal.
+
+---
+
+## TOTAL VO WORD COUNT: ~95 words
+## TARGET SPEAKING RATE: ~95–100 WPM (unhurried, professional)
+## RECOMMENDED VOICE STYLE: Warm baritone or clear mezzo, North American or neutral British accent

@@ -1,0 +1,39 @@
+1
+00:00:00,400 --> 00:00:05,000
+Every software incident starts with a question:
+where do we begin?
+
+2
+00:00:05,200 --> 00:00:11,800
+JiraPilot AI turns a new Jira issue
+into a structured investigation.
+
+3
+00:00:12,200 --> 00:00:19,800
+It checks ticket readiness and helps developers
+request the details they need.
+
+4
+00:00:20,200 --> 00:00:29,800
+It analyzes logs, connects related errors,
+and surfaces evidence behind likely failure points.
+
+5
+00:00:30,200 --> 00:00:37,800
+It recommends approved repositories and prepares
+copy-ready clone commands for debugging.
+
+6
+00:00:38,200 --> 00:00:46,800
+It prepares readable investigation reports
+and keeps the team informed.
+
+7
+00:00:47,200 --> 00:00:53,800
+Evidence, next steps and investigation status
+stay in one place.
+
+8
+00:00:54,200 --> 00:00:58,800
+Less repetitive triage. Clearer investigations.
+More time for developers to solve problems.
