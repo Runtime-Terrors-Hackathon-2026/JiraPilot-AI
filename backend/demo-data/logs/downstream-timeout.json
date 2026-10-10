@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-10-09T08:22:15.890Z",
+  "level": "ERROR",
+  "service": "workflow-orchestrator",
+  "correlationId": "CORR-DEMO-1002",
+  "traceId": "trace-demo-99231",
+  "logger": "com.northstar.workflow.engine.SagaStepExecutor",
+  "message": "Step ALLOCATE_IP timed out after 30000ms calling http://resource-inventory-service:8084/api/v1/resources/allocate",
+  "exception": {
+    "class": "java.net.http.HttpTimeoutException",
+    "message": "request timed out",
+    "stackTrace": [
+      "com.northstar.workflow.client.InventoryClient.allocateResource(InventoryClient.java:78)",
+      "com.northstar.workflow.engine.SagaStepExecutor.executeStep(SagaStepExecutor.java:112)",
+      "com.northstar.workflow.service.WorkflowRunner.run(WorkflowRunner.java:65)"
+    ]
+  },
+  "context": {
+    "workflowExecutionId": "WF-EXEC-5021",
+    "targetEndpoint": "http://resource-inventory-service:8084/api/v1/resources/allocate",
+    "timeoutConfiguredMs": 30000
+  }
+}

@@ -1,0 +1,239 @@
+[
+  {
+    "repositoryId": "REPO-RES-INV",
+    "displayName": "resource-inventory-service",
+    "serviceName": "resource-inventory-service",
+    "ownerGroup": "Network Resource Group",
+    "approvedCloneUrl": "https://github.com/northstar-labs/resource-inventory-service.git",
+    "defaultBranch": "main",
+    "supportedEndpoints": [
+      "/api/v1/resources/allocate",
+      "/api/v1/resources/{resourceId}",
+      "/api/v1/resources/batch",
+      "/actuator/health"
+    ],
+    "endpointPatterns": [
+      "^/api/v1/resources(/.*)?$"
+    ],
+    "packagePrefixes": [
+      "com.northstar.inventory",
+      "c.n.inventory"
+    ],
+    "languages": ["Java", "SQL"],
+    "frameworks": ["Spring Boot 3", "Spring Data JPA", "PostgreSQL", "HikariCP"],
+    "description": "Authoritative inventory database storing allocation states of network nodes, IP ranges, port assignments, and virtual circuits.",
+    "verifiedModules": [
+      "src/main/java/com/northstar/inventory/service/ResourceAllocationService.java",
+      "src/main/java/com/northstar/inventory/repository/JpaResourceRepository.java",
+      "src/main/java/com/northstar/inventory/controller/ResourceController.java"
+    ],
+    "documentationLinks": [
+      "https://internal.northstar.example.com/docs/services/resource-inventory"
+    ],
+    "lastVerified": "2026-10-09T12:00:00Z",
+    "localPath": "mock-repositories/resource-inventory-service",
+    "currentRevision": "a9b47e2f",
+    "indexingStatus": "INDEXED",
+    "accessPermission": "READ_ONLY",
+    "lastIndexedAt": "2026-10-10T12:00:00Z",
+    "isApproved": true
+  },
+  {
+    "repositoryId": "REPO-WF-ORCH",
+    "displayName": "workflow-orchestrator",
+    "serviceName": "workflow-orchestrator",
+    "ownerGroup": "Service Operations Group",
+    "approvedCloneUrl": "https://github.com/northstar-labs/workflow-orchestrator.git",
+    "defaultBranch": "main",
+    "supportedEndpoints": [
+      "/api/v1/workflows/start",
+      "/api/v1/workflows/{executionId}/status",
+      "/healthz"
+    ],
+    "endpointPatterns": [
+      "^/api/v1/workflows(/.*)?$"
+    ],
+    "packagePrefixes": [
+      "com.northstar.workflow",
+      "c.n.workflow"
+    ],
+    "languages": ["Java"],
+    "frameworks": ["Spring Boot 3", "Resilience4j", "Redis"],
+    "description": "SAGA distributed state machine engine coordinating multi-step transactions across network resource systems and integration pipelines.",
+    "verifiedModules": [
+      "src/main/java/com/northstar/workflow/engine/SagaStepExecutor.java",
+      "src/main/java/com/northstar/workflow/client/InventoryClient.java",
+      "src/main/java/com/northstar/workflow/service/WorkflowService.java"
+    ],
+    "documentationLinks": [
+      "https://internal.northstar.example.com/docs/services/workflow-orchestrator"
+    ],
+    "lastVerified": "2026-10-09T12:00:00Z",
+    "localPath": "mock-repositories/workflow-orchestrator",
+    "currentRevision": "c3f8109d",
+    "indexingStatus": "INDEXED",
+    "accessPermission": "READ_ONLY",
+    "lastIndexedAt": "2026-10-10T12:00:00Z",
+    "isApproved": true
+  },
+  {
+    "repositoryId": "REPO-SVC-REQ",
+    "displayName": "service-request-api",
+    "serviceName": "service-request-api",
+    "ownerGroup": "Service Operations Group",
+    "approvedCloneUrl": "https://github.com/northstar-labs/service-request-api.git",
+    "defaultBranch": "main",
+    "supportedEndpoints": [
+      "/api/v1/requests",
+      "/api/v1/requests/{requestId}",
+      "/actuator/health"
+    ],
+    "endpointPatterns": [
+      "^/api/v1/requests(/.*)?$"
+    ],
+    "packagePrefixes": [
+      "com.northstar.service.request",
+      "c.n.service.request"
+    ],
+    "languages": ["Java"],
+    "frameworks": ["Spring Boot 3", "Spring Web", "Jakarta Validation"],
+    "description": "Single entry point for enterprise clients and portals to submit, update, and query the status of digital service lifecycle requests.",
+    "verifiedModules": [
+      "src/main/java/com/northstar/service/request/controller/RequestController.java",
+      "src/main/java/com/northstar/service/request/service/RequestValidator.java",
+      "src/main/java/com/northstar/service/request/service/RequestService.java"
+    ],
+    "documentationLinks": [
+      "https://internal.northstar.example.com/docs/services/service-request-api"
+    ],
+    "lastVerified": "2026-10-09T12:00:00Z",
+    "isApproved": true
+  },
+  {
+    "repositoryId": "REPO-INT-GW",
+    "displayName": "integration-gateway",
+    "serviceName": "integration-gateway",
+    "ownerGroup": "Integration Platform Group",
+    "approvedCloneUrl": "https://github.com/northstar-labs/integration-gateway.git",
+    "defaultBranch": "main",
+    "supportedEndpoints": [
+      "/api/v1/gateway/routes",
+      "/healthz"
+    ],
+    "endpointPatterns": [
+      "^/api/v1/gateway(/.*)?$"
+    ],
+    "packagePrefixes": [
+      "com.northstar.gateway",
+      "c.n.gateway"
+    ],
+    "languages": ["Java", "Kotlin"],
+    "frameworks": ["Spring Cloud Gateway", "OAuth2 / JWT", "Bucket4j"],
+    "description": "Ingress reverse proxy, OAuth2/mTLS token termination, rate limiting, and request sanitization gateway.",
+    "verifiedModules": [
+      "src/main/java/com/northstar/gateway/security/JwtAuthenticationFilter.java",
+      "src/main/java/com/northstar/gateway/filter/RateLimitFilter.java"
+    ],
+    "documentationLinks": [
+      "https://internal.northstar.example.com/docs/services/integration-gateway"
+    ],
+    "lastVerified": "2026-10-09T12:00:00Z",
+    "isApproved": true
+  },
+  {
+    "repositoryId": "REPO-PARTNER",
+    "displayName": "partner-connect-api",
+    "serviceName": "partner-connect-api",
+    "ownerGroup": "Integration Platform Group",
+    "approvedCloneUrl": "https://github.com/northstar-labs/partner-connect-api.git",
+    "defaultBranch": "main",
+    "supportedEndpoints": [
+      "/api/v1/partner/sync",
+      "/api/v1/partner/carrier-route",
+      "/health"
+    ],
+    "endpointPatterns": [
+      "^/api/v1/partner(/.*)?$"
+    ],
+    "packagePrefixes": [
+      "com.northstar.partner",
+      "c.n.partner"
+    ],
+    "languages": ["Java"],
+    "frameworks": ["Spring Boot 3", "Apache HttpClient 5"],
+    "description": "Outbound webhook and API mediation for simulated third-party telecom carriers and hardware vendors.",
+    "verifiedModules": [
+      "src/main/java/com/northstar/partner/client/CarrierSimulatorClient.java",
+      "src/main/java/com/northstar/partner/interceptor/RateLimitInterceptor.java"
+    ],
+    "documentationLinks": [
+      "https://internal.northstar.example.com/docs/services/partner-connect-api"
+    ],
+    "lastVerified": "2026-10-09T12:00:00Z",
+    "isApproved": true
+  },
+  {
+    "repositoryId": "REPO-INC-AI",
+    "displayName": "incident-intelligence-service",
+    "serviceName": "incident-intelligence-service",
+    "ownerGroup": "Reliability Engineering Group",
+    "approvedCloneUrl": "https://github.com/northstar-labs/incident-intelligence-service.git",
+    "defaultBranch": "main",
+    "supportedEndpoints": [
+      "/api/v1/ai/investigate",
+      "/api/v1/intelligence/analyze",
+      "/health"
+    ],
+    "endpointPatterns": [
+      "^/api/v1/ai(/.*)?$",
+      "^/api/v1/intelligence(/.*)?$"
+    ],
+    "packagePrefixes": [
+      "com.northstar.ai",
+      "c.n.ai"
+    ],
+    "languages": ["Python", "FastAPI"],
+    "frameworks": ["FastAPI", "Pydantic", "NVIDIA NIM"],
+    "description": "Real-time semantic analysis of error tickets, log telemetry aggregation, and root cause synthesis.",
+    "verifiedModules": [
+      "app/services/investigation_engine.py",
+      "app/services/log_parser.py"
+    ],
+    "documentationLinks": [
+      "https://internal.northstar.example.com/docs/services/incident-intelligence"
+    ],
+    "lastVerified": "2026-10-09T12:00:00Z",
+    "isApproved": true
+  },
+  {
+    "repositoryId": "REPO-REQ-VAL",
+    "displayName": "request-validation-engine",
+    "serviceName": "request-validation-engine",
+    "ownerGroup": "Service Operations Group",
+    "approvedCloneUrl": "https://github.com/northstar-labs/request-validation-engine.git",
+    "defaultBranch": "main",
+    "supportedEndpoints": [
+      "/api/v1/validate",
+      "/health"
+    ],
+    "endpointPatterns": [
+      "^/api/v1/validate(/.*)?$"
+    ],
+    "packagePrefixes": [
+      "com.northstar.validation",
+      "c.n.validation"
+    ],
+    "languages": ["Java"],
+    "frameworks": ["Spring Boot 3", "NetworkNT JSON Schema"],
+    "description": "Evaluates contract conformity, schema compliance, SLA entitlements, and policy checks prior to orchestration.",
+    "verifiedModules": [
+      "src/main/java/com/northstar/validation/engine/SchemaValidator.java",
+      "src/main/java/com/northstar/validation/controller/ValidationController.java"
+    ],
+    "documentationLinks": [
+      "https://internal.northstar.example.com/docs/services/request-validation"
+    ],
+    "lastVerified": "2026-10-09T12:00:00Z",
+    "isApproved": true
+  }
+]

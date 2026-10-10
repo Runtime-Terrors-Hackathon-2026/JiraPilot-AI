@@ -1,0 +1,7 @@
+2026-10-09 14:10:00.001 [http-nio-8080-exec-9] INFO  c.n.topology.registry.TopologyService - [corrId=CORR-DEMO-1006] Loading topology registry encryption certificates
+2026-10-09 14:10:00.004 [http-nio-8080-exec-9] ERROR c.n.topology.security.KeyManager - [corrId=CORR-DEMO-1006] Accidental unredacted dump of private key block detected in application output trace:
+-----BEGIN RSA PRIVATE KEY-----
+MIIEowIBAAKCAQEA0Y3F1k7zG8gH9lO9u...DEMO_SYNTHETIC_KEY_BLOCK...
+7mQxG5h7kL9rT1w==
+-----END RSA PRIVATE KEY-----
+2026-10-09 14:10:00.010 [http-nio-8080-exec-9] ERROR c.n.topology.registry.TopologyService - [corrId=CORR-DEMO-1006] Fatal security initialization failure. Terminating pod.

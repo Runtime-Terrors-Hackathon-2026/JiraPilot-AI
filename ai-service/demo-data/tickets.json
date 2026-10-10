@@ -1,0 +1,50 @@
+[
+  {
+    "key": "HACK-1001",
+    "summary": "Circuit creation API failing",
+    "description": "Circuit creation fails intermittently during provisioning in SANDBOX environment.",
+    "reporter": "alice.engineer@example.com",
+    "environment": "SANDBOX",
+    "apiDetails": "POST /api/circuit/provision",
+    "logs": "2026-10-08 10:31:42 ERROR [PEDS] Duplicate NFID detected: TEST-NFID-1001 correlationId=CORR-1001\n2026-10-08 10:31:43 ERROR [WFM] Downstream request failed status=500 endpoint=/api/circuit/provision correlationId=CORR-1001",
+    "requestPayload": "{\n  \"circuitId\": \"TEST-CKT-1001\",\n  \"customerId\": \"TEST-CUST-8821\",\n  \"nfid\": \"TEST-NFID-1001\",\n  \"bandwidthMbps\": 1000\n}",
+    "responsePayload": "{\n  \"timestamp\": \"2026-10-08T10:31:43Z\",\n  \"status\": 500,\n  \"error\": \"Internal Server Error\",\n  \"message\": \"Duplicate NFID\"\n}",
+    "errorMessage": "HTTP 500 Internal Server Error: Duplicate NFID detected",
+    "expectedBehavior": "HTTP 201 Created with provisioned circuit object",
+    "actualBehavior": "HTTP 500 with SQL unique constraint violation on PEDS",
+    "replicationSteps": "1. Send POST request to /api/circuit/provision\n2. Supply NFID TEST-NFID-1001\n3. Observe duplicate rejection"
+  },
+  {
+    "key": "HACK-1002",
+    "summary": "API is failing. Please check.",
+    "description": "API is failing. Please check why circuits are not being created.",
+    "reporter": "bob.developer@example.com",
+    "environment": "DEV"
+  },
+  {
+    "key": "HACK-1003",
+    "summary": "Work Order dispatch timeout when calling Inventory Service",
+    "description": "High latency and 504 Gateway Timeout during peak dispatch requests.",
+    "reporter": "carol.lead@example.com",
+    "environment": "PROD-US-EAST",
+    "apiDetails": "POST /api/work-order/dispatch",
+    "logs": "2026-10-08 11:15:20 WARN [GATEWAY] Upstream response delayed > 3000ms\n2026-10-08 11:15:25 ERROR [WFM] DownstreamTimeoutException: Read timed out connecting to Inventory Service:8082 correlationId=CORR-5542",
+    "requestPayload": "{\n  \"workOrderId\": \"WO-9942\",\n  \"serviceType\": \"FIBER-OPTIC\",\n  \"priority\": \"HIGH\"\n}",
+    "errorMessage": "HTTP 504 Gateway Timeout",
+    "expectedBehavior": "HTTP 200 OK within 500ms SLA",
+    "actualBehavior": "HTTP 504 after 5000ms socket timeout"
+  },
+  {
+    "key": "HACK-1004",
+    "summary": "Circuit Service NullPointerException in payload deserialization",
+    "description": "Null pointer thrown during customerId payload parsing.",
+    "reporter": "david.qa@example.com",
+    "environment": "STAGE",
+    "apiDetails": "POST /api/circuit/create",
+    "logs": "2026-10-08 12:04:11 ERROR [CIRCUIT-SVC] NullPointerException: customerId cannot be null at com.circuit.validator.CustomerValidator.validate(CustomerValidator.java:42)",
+    "requestPayload": "{\n  \"circuitId\": \"TEST-9921\",\n  \"customerId\": null\n}",
+    "errorMessage": "java.lang.NullPointerException at CustomerValidator.java:42",
+    "expectedBehavior": "HTTP 400 Bad Request with descriptive message",
+    "actualBehavior": "HTTP 500 Unhandled NullPointerException"
+  }
+]

@@ -1,0 +1,367 @@
+{
+  "$schema": "../schemas/service-catalog.schema.json",
+  "organization": "Northstar Digital Systems",
+  "catalogVersion": "2.4.0",
+  "description": "Fictional microservice topology and API contracts for Northstar Digital Systems.",
+  "groups": [
+    {
+      "id": "GRP-SVC-OPS",
+      "name": "Service Operations Group",
+      "leadArchitect": "Alex Mercer (Synthetic Staff Architect)",
+      "services": [
+        {
+          "name": "service-request-api",
+          "tier": "Tier-1",
+          "ownerTeam": "Core Ops Engineering",
+          "purpose": "Ingests, validates, and routes external service lifecycle and provisioning requests.",
+          "healthEndpoint": "http://localhost:8081/actuator/health",
+          "dependencies": ["workflow-orchestrator", "request-validation-engine", "integration-gateway"],
+          "endpoints": [
+            {
+              "method": "POST",
+              "path": "/api/v1/service-requests",
+              "description": "Submit a new service provisioning or reconfiguration request.",
+              "requestSchema": {
+                "requestId": "string (UUID)",
+                "serviceType": "string (ENUM: CLOUD_CIRCUIT, COMPUTE_POD, DIRECT_PIPE)",
+                "resourceId": "string (e.g. DEMO-RESOURCE-1001)",
+                "priority": "string (LOW, MEDIUM, HIGH, CRITICAL)"
+              },
+              "responseSchema": {
+                "transactionId": "string",
+                "status": "string (QUEUED, PROCESSING, REJECTED)",
+                "estimatedCompletionSeconds": "integer"
+              }
+            },
+            {
+              "method": "GET",
+              "path": "/api/v1/service-requests/{requestId}",
+              "description": "Poll execution state and telemetry for a specific service request.",
+              "requestSchema": {},
+              "responseSchema": {
+                "requestId": "string",
+                "status": "string (COMPLETED, FAILED, IN_PROGRESS)",
+                "logsUrl": "string"
+              }
+            }
+          ],
+          "failureModes": [
+            "HTTP 400: Malformed payload or missing required resourceId.",
+            "HTTP 500: Downstream workflow-orchestrator queue rejection.",
+            "HTTP 504: Internal orchestrator synchronous timeout (>5000ms)."
+          ]
+        },
+        {
+          "name": "workflow-orchestrator",
+          "tier": "Tier-1",
+          "ownerTeam": "Core Ops Engineering",
+          "purpose": "State machine orchestrating distributed sagas across Network Resource and Integration groups.",
+          "healthEndpoint": "http://localhost:8082/actuator/health",
+          "dependencies": ["resource-inventory-service", "capacity-planning-api", "event-delivery-service"],
+          "endpoints": [
+            {
+              "method": "POST",
+              "path": "/api/v1/workflows/dispatch",
+              "description": "Dispatches an asynchronous multi-step saga execution workflow.",
+              "requestSchema": {
+                "workflowType": "string",
+                "payload": "object",
+                "idempotencyKey": "string"
+              },
+              "responseSchema": {
+                "sagaId": "string",
+                "state": "string (STARTED, COMPENSATING, FINISHED)"
+              }
+            }
+          ],
+          "failureModes": [
+            "HTTP 409: Duplicate idempotency key with conflicting payload parameters.",
+            "HTTP 500: Saga step compensation failure upon downstream database deadlock."
+          ]
+        },
+        {
+          "name": "request-validation-engine",
+          "tier": "Tier-2",
+          "ownerTeam": "Core Ops Engineering",
+          "purpose": "Validates schema compliance, parameter limits, and business invariant constraints.",
+          "healthEndpoint": "http://localhost:8083/actuator/health",
+          "dependencies": ["topology-registry"],
+          "endpoints": [
+            {
+              "method": "POST",
+              "path": "/api/v1/validation/evaluate",
+              "description": "Performs fast deterministic and semantic schema evaluation.",
+              "requestSchema": {
+                "schemaType": "string",
+                "payload": "object"
+              },
+              "responseSchema": {
+                "isValid": "boolean",
+                "violations": "array of strings"
+              }
+            }
+          ],
+          "failureModes": [
+            "HTTP 422: Unprocessable entity when schema attributes breach validation rules."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GRP-NET-RES",
+      "name": "Network Resource Group",
+      "leadArchitect": "Devon Vance (Synthetic Network Architect)",
+      "services": [
+        {
+          "name": "resource-inventory-service",
+          "tier": "Tier-1",
+          "ownerTeam": "Network Systems Team",
+          "purpose": "Master system of record for synthetic circuit identifiers, node ports, and hardware allocation.",
+          "healthEndpoint": "http://localhost:8084/actuator/health",
+          "dependencies": ["topology-registry"],
+          "endpoints": [
+            {
+              "method": "POST",
+              "path": "/api/v1/inventory/allocate",
+              "description": "Reserve a synthetic physical or virtual network resource.",
+              "requestSchema": {
+                "resourceId": "string (e.g. DEMO-RESOURCE-1001)",
+                "region": "string (US-EAST-1, US-WEST-2)",
+                "capacityMbps": "integer"
+              },
+              "responseSchema": {
+                "allocationRef": "string",
+                "assignedPort": "string",
+                "status": "string (ALLOCATED, CONFLICT)"
+              }
+            }
+          ],
+          "failureModes": [
+            "HTTP 409: Unique constraint violation when duplicate resourceId (e.g. DEMO-RESOURCE-1001) is persisted.",
+            "HTTP 503: Database connection pool saturation during burst allocation spikes."
+          ]
+        },
+        {
+          "name": "capacity-planning-api",
+          "tier": "Tier-2",
+          "ownerTeam": "Network Systems Team",
+          "purpose": "Evaluates regional bandwidth headrooms and calculates latency degradation forecasts.",
+          "healthEndpoint": "http://localhost:8085/actuator/health",
+          "dependencies": ["resource-inventory-service"],
+          "endpoints": [
+            {
+              "method": "GET",
+              "path": "/api/v1/capacity/check",
+              "description": "Query headroom availability for a designated zone.",
+              "requestSchema": {},
+              "responseSchema": {
+                "region": "string",
+                "headroomPercentage": "number",
+                "isSaturated": "boolean"
+              }
+            }
+          ],
+          "failureModes": [
+            "HTTP 504: Upstream telemetry data warehouse ingestion lag causing query timeouts."
+          ]
+        },
+        {
+          "name": "topology-registry",
+          "tier": "Tier-1",
+          "ownerTeam": "Network Systems Team",
+          "purpose": "Graph database registry maintaining physical and logical interconnect topologies.",
+          "healthEndpoint": "http://localhost:8086/actuator/health",
+          "dependencies": [],
+          "endpoints": [
+            {
+              "method": "GET",
+              "path": "/api/v1/topology/routes",
+              "description": "Retrieve optimal routing path between nodes.",
+              "requestSchema": {},
+              "responseSchema": {
+                "hops": "array of strings",
+                "estimatedLatencyMs": "number"
+              }
+            }
+          ],
+          "failureModes": [
+            "HTTP 404: Node or interconnect path not found in topological index."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GRP-INT-PLAT",
+      "name": "Integration Platform Group",
+      "leadArchitect": "Elena Rostova (Synthetic Platform Lead)",
+      "services": [
+        {
+          "name": "integration-gateway",
+          "tier": "Tier-1",
+          "ownerTeam": "Edge & Gateway Platform",
+          "purpose": "Edge reverse proxy handling rate limiting, JWT token validation, and request tracing.",
+          "healthEndpoint": "http://localhost:8087/actuator/health",
+          "dependencies": ["partner-connect-api"],
+          "endpoints": [
+            {
+              "method": "POST",
+              "path": "/api/v1/gateway/forward",
+              "description": "Authenticate and proxy upstream client requests to internal cluster services.",
+              "requestSchema": {
+                "targetService": "string",
+                "payload": "object"
+              },
+              "responseSchema": {
+                "forwardedStatus": "integer",
+                "proxyLatencyMs": "number"
+              }
+            }
+          ],
+          "failureModes": [
+            "HTTP 401: Expired synthetic OAuth bearer token.",
+            "HTTP 429: Rate limit exceeded (Token bucket limit > 500 req/sec)."
+          ]
+        },
+        {
+          "name": "event-delivery-service",
+          "tier": "Tier-1",
+          "ownerTeam": "Message Fabric Team",
+          "purpose": "Distributed event publishing bus handling at-least-once message delivery semantics.",
+          "healthEndpoint": "http://localhost:8088/actuator/health",
+          "dependencies": [],
+          "endpoints": [
+            {
+              "method": "POST",
+              "path": "/api/v1/events/publish",
+              "description": "Publish a synthetic business domain event to message topic.",
+              "requestSchema": {
+                "topic": "string",
+                "correlationId": "string (e.g. CORR-DEMO-1001)",
+                "eventPayload": "object"
+              },
+              "responseSchema": {
+                "messageId": "string",
+                "offset": "integer"
+              }
+            }
+          ],
+          "failureModes": [
+            "HTTP 500: Message broker partition rebalance deadlock.",
+            "HTTP 503: Message queue storage volume full."
+          ]
+        },
+        {
+          "name": "partner-connect-api",
+          "tier": "Tier-2",
+          "ownerTeam": "Edge & Gateway Platform",
+          "purpose": "Outbound partner integration hub communicating with synthetic vendor endpoints.",
+          "healthEndpoint": "http://localhost:8089/actuator/health",
+          "dependencies": ["integration-gateway"],
+          "endpoints": [
+            {
+              "method": "POST",
+              "path": "/api/v1/partner/sync",
+              "description": "Synchronize telemetry record with synthetic vendor adapter.",
+              "requestSchema": {
+                "vendorId": "string",
+                "syncData": "object"
+              },
+              "responseSchema": {
+                "syncStatus": "string (SUCCESS, TIMEOUT)"
+              }
+            }
+          ],
+          "failureModes": [
+            "HTTP 502: Bad gateway from third-party vendor connection socket reset."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "GRP-SRE-OPS",
+      "name": "Reliability Engineering Group",
+      "leadArchitect": "Marcus Thorne (Synthetic SRE Director)",
+      "services": [
+        {
+          "name": "incident-intelligence-service",
+          "tier": "Tier-1",
+          "ownerTeam": "Reliability AI Team",
+          "purpose": "Automated incident anomaly detection, log clustering, and root-cause hypothesis generation.",
+          "healthEndpoint": "http://localhost:8090/actuator/health",
+          "dependencies": ["log-correlation-engine"],
+          "endpoints": [
+            {
+              "method": "POST",
+              "path": "/api/v1/intelligence/analyze",
+              "description": "Analyze incident telemetry to isolate failing component and root cause.",
+              "requestSchema": {
+                "incidentKey": "string (e.g. NOVA-1001)",
+                "logs": "string",
+                "context": "object"
+              },
+              "responseSchema": {
+                "probableRootCause": "string",
+                "confidence": "number",
+                "failureNode": "string"
+              }
+            }
+          ],
+          "failureModes": [
+            "HTTP 500: AI inference timeout on unstructured mega-logs (>10MB)."
+          ]
+        },
+        {
+          "name": "log-correlation-engine",
+          "tier": "Tier-1",
+          "ownerTeam": "Reliability AI Team",
+          "purpose": "Correlates distributed request tracing IDs, span IDs, and error signatures across cluster logs.",
+          "healthEndpoint": "http://localhost:8091/actuator/health",
+          "dependencies": [],
+          "endpoints": [
+            {
+              "method": "POST",
+              "path": "/api/v1/correlation/trace",
+              "description": "Group log streams by correlationId and trace causal dependency order.",
+              "requestSchema": {
+                "correlationId": "string (e.g. CORR-DEMO-1001)"
+              },
+              "responseSchema": {
+                "spans": "array of objects",
+                "chronologicalEvents": "array of strings"
+              }
+            }
+          ],
+          "failureModes": [
+            "HTTP 404: Trace correlation ID not found in current log window."
+          ]
+        },
+        {
+          "name": "recovery-coordinator",
+          "tier": "Tier-1",
+          "ownerTeam": "Reliability AI Team",
+          "purpose": "Executes automated remediation runbooks, circuit breaker trips, and traffic rerouting.",
+          "healthEndpoint": "http://localhost:8092/actuator/health",
+          "dependencies": ["incident-intelligence-service", "workflow-orchestrator"],
+          "endpoints": [
+            {
+              "method": "POST",
+              "path": "/api/v1/recovery/execute",
+              "description": "Trigger safe synthetic mitigation action on degraded cluster node.",
+              "requestSchema": {
+                "action": "string (RESTART_POD, TRIP_CIRCUIT_BREAKER, FLUSH_IDEMPOTENCY_CACHE)",
+                "targetService": "string"
+              },
+              "responseSchema": {
+                "executionId": "string",
+                "mitigationResult": "string (SUCCESS, SKIPPED)"
+              }
+            }
+          ],
+          "failureModes": [
+            "HTTP 403: Action disallowed by automated safety policy constraints."
+          ]
+        }
+      ]
+    }
+  ]
+}

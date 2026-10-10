@@ -10,20 +10,31 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 from app.models.schemas import InspectedSymbol, ExecutionPathStep, FailureLocation
 
-WORKSPACE_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+def get_workspace_root() -> Path:
+    candidates = [
+        Path(__file__).resolve().parent.parent.parent.parent,
+        Path(__file__).resolve().parent.parent.parent,
+        Path("/app"),
+        Path("."),
+    ]
+    for cand in candidates:
+        if (cand / "mock-repositories").exists() or (cand / "demo-data").exists():
+            return cand
+    return candidates[0]
 
 def resolve_repo_path(repo_metadata: Dict[str, Any]) -> Optional[Path]:
     """Resolves the physical directory path for a configured repository."""
+    root = get_workspace_root()
     local_path = repo_metadata.get("localPath")
     if local_path:
-        p = WORKSPACE_ROOT / local_path
+        p = root / local_path
         if p.exists() and p.is_dir():
             return p
     
     # Fallback to display name in mock-repositories or root
     name = repo_metadata.get("displayName") or repo_metadata.get("serviceName")
     if name:
-        cand = WORKSPACE_ROOT / "mock-repositories" / name
+        cand = root / "mock-repositories" / name
         if cand.exists() and cand.is_dir():
             return cand
     return None

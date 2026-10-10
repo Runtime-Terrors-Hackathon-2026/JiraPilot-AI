@@ -9,13 +9,24 @@ import re
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
-CATALOG_PATH = Path(__file__).resolve().parent.parent.parent.parent / "demo-data" / "repositories.json"
+def get_catalog_path() -> Path:
+    candidates = [
+        Path(__file__).resolve().parent.parent.parent.parent / "demo-data" / "repositories.json",
+        Path(__file__).resolve().parent.parent.parent / "demo-data" / "repositories.json",
+        Path("/app/demo-data/repositories.json"),
+        Path("demo-data/repositories.json")
+    ]
+    for cand in candidates:
+        if cand.exists():
+            return cand
+    return candidates[0]
 
 def load_repository_catalog() -> List[Dict[str, Any]]:
     """Loads approved repository metadata from demo-data/repositories.json."""
-    if not CATALOG_PATH.exists():
+    cat_path = get_catalog_path()
+    if not cat_path.exists():
         return []
-    with open(CATALOG_PATH, "r", encoding="utf-8") as f:
+    with open(cat_path, "r", encoding="utf-8") as f:
         return json.load(f)
 
 def match_repositories(

@@ -10,7 +10,14 @@ import {
   NvidiaStatus
 } from '../types';
 
-const API_BASE = '/api';
+const getApiBase = (): string => {
+  const envUrl = ((import.meta as any)?.env?.VITE_API_BASE_URL as string | undefined)?.trim();
+  if (!envUrl) return '/api';
+  const trimmed = envUrl.replace(/\/+$/, '');
+  return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+};
+
+const API_BASE = getApiBase();
 
 export const api = {
   // Issues

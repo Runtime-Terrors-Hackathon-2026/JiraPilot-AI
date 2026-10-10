@@ -1,0 +1,26 @@
+[
+  {
+    "timestamp": "2026-10-09T12:15:30.104Z",
+    "level": "INFO",
+    "service": "request-validation-engine",
+    "correlationId": "CORR-DEMO-1004",
+    "message": "Validating incoming provisioning contract against Schema v2.1.0"
+  },
+  {
+    "timestamp": "2026-10-09T12:15:30.120Z",
+    "level": "WARN",
+    "service": "request-validation-engine",
+    "correlationId": "CORR-DEMO-1004",
+    "message": "Field 'bandwidthMbps' missing in payload body for serviceType='CLOUD_CIRCUIT'"
+  },
+  {
+    "timestamp": "2026-10-09T12:15:30.125Z",
+    "level": "ERROR",
+    "service": "request-validation-engine",
+    "correlationId": "CORR-DEMO-1004",
+    "exception": "com.northstar.validation.exception.SchemaValidationException: Mandatory field 'bandwidthMbps' cannot be null",
+    "endpoint": "/api/v1/validation/evaluate",
+    "statusCode": 400,
+    "message": "Contract validation rejected with HTTP 400 Bad Request"
+  }
+]

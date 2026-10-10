@@ -1,0 +1,8 @@
+2026-10-09 08:14:22.102 [http-nio-8084-exec-3] WARN  c.n.inventory.service.ResourceAllocationService - [corrId=CORR-DEMO-1001, traceId=trace-demo-88102] Resource ID DEMO-RESOURCE-1001 already reserved for site SITE-NYC-01.
+2026-10-09 08:14:22.105 [http-nio-8084-exec-3] ERROR c.n.inventory.repository.JpaResourceRepository - [corrId=CORR-DEMO-1001] Primary key collision detected on table synthetic_resources
+org.springframework.dao.DataIntegrityViolationException: Pre-existing allocation detected for resource ID: DEMO-RESOURCE-1001
+	at com.northstar.inventory.repository.JpaResourceRepository.save(JpaResourceRepository.java:94)
+	at com.northstar.inventory.service.ResourceAllocationService.reserveCircuit(ResourceAllocationService.java:142)
+	at com.northstar.inventory.controller.ResourceController.allocate(ResourceController.java:58)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+2026-10-09 08:14:22.110 [http-nio-8084-exec-3] INFO  c.n.inventory.aspect.AuditLogger - [corrId=CORR-DEMO-1001] Allocation failed with status 409 Conflict

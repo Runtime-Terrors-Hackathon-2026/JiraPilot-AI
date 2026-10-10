@@ -1,0 +1,8 @@
+2026-10-09 13:00:15.220 [http-nio-8085-exec-1] INFO  c.n.capacity.service.CapacityService - [corrId=CORR-DEMO-1005] Capacity reservation request received for node NODE-DENVER-01 requested_bandwidth=10000Mbps
+2026-10-09 13:00:15.234 [http-nio-8085-exec-1] WARN  c.n.capacity.evaluator.ThresholdEvaluator - [corrId=CORR-DEMO-1005] Requested bandwidth 10000Mbps exceeds available reserve of 3400Mbps on NODE-DENVER-01
+2026-10-09 13:00:15.239 [http-nio-8085-exec-1] ERROR c.n.capacity.controller.CapacityController - [corrId=CORR-DEMO-1005] Capacity reservation failed
+com.northstar.capacity.exception.InsufficientCapacityException: Node NODE-DENVER-01 is exhausted. Available: 3400Mbps, Requested: 10000Mbps
+	at com.northstar.capacity.evaluator.ThresholdEvaluator.verify(ThresholdEvaluator.java:55)
+	at com.northstar.capacity.service.CapacityService.reserveCapacity(CapacityService.java:92)
+	at com.northstar.capacity.controller.CapacityController.reserve(CapacityController.java:44)
+2026-10-09 13:00:15.244 [http-nio-8085-exec-1] INFO  c.n.capacity.audit.CapacityAudit - [corrId=CORR-DEMO-1005] Responded with HTTP 500 Insufficient Capacity on /api/v1/capacity/reserve

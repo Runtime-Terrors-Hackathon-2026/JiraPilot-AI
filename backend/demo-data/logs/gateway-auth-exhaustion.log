@@ -1,0 +1,7 @@
+2026-10-09 08:35:10.450 [gateway-worker-1] DEBUG c.n.gateway.security.JwtAuthenticationFilter - Inbound request POST /api/v1/requests from IP 192.0.2.14
+2026-10-09 08:35:10.452 [gateway-worker-1] WARN  c.n.gateway.security.JwtAuthenticationFilter - [corrId=CORR-DEMO-1004, traceId=trace-demo-10492] JWT claim 'exp' [1760000000] is before current clock [1760000120]. Token expired.
+com.auth0.jwt.exceptions.TokenExpiredException: The Token has expired on 2026-10-09T08:33:10Z.
+	at com.auth0.jwt.JWTVerifier.assertValidDate(JWTVerifier.java:441)
+	at com.auth0.jwt.JWTVerifier.verify(JWTVerifier.java:395)
+	at com.northstar.gateway.security.JwtAuthenticationFilter.doFilter(JwtAuthenticationFilter.java:68)
+2026-10-09 08:35:10.455 [gateway-worker-1] INFO  c.n.gateway.metrics.SecurityMetrics - [corrId=CORR-DEMO-1004] Rejection: 401 UNAUTHORIZED reason=TOKEN_EXPIRED

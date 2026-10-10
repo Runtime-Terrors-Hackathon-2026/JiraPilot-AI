@@ -1,0 +1,8 @@
+2026-10-09 11:42:10.012 [reactor-http-epoll-4] INFO  c.n.gateway.filter.AuthFilter - [corrId=CORR-DEMO-1003] Validated OAuth2 client client_id=partner-telecom-ext on route /api/v1/gateway/dispatch
+2026-10-09 11:42:10.018 [reactor-http-epoll-4] WARN  c.n.gateway.ratelimit.RedisRateLimiter - [corrId=CORR-DEMO-1003] Token bucket quota exhausted for key partner-telecom-ext. Remaining tokens: 0. Refill rate: 10/sec
+2026-10-09 11:42:10.022 [reactor-http-epoll-4] ERROR c.n.gateway.handler.GatewayErrorHandler - [corrId=CORR-DEMO-1003] Rejecting incoming API invocation due to rate limit violation
+org.springframework.web.server.ResponseStatusException: 429 TOO_MANY_REQUESTS "Client exceeded provisioned transaction per second rate limit"
+	at com.northstar.gateway.filter.RateLimitFilter.filter(RateLimitFilter.java:82)
+	at org.springframework.cloud.gateway.handler.FilteringWebHandler.handle(FilteringWebHandler.java:79)
+	at org.springframework.web.server.handler.DefaultWebFilterChain.filter(DefaultWebFilterChain.java:102)
+2026-10-09 11:42:10.025 [reactor-http-epoll-4] INFO  c.n.gateway.metrics.GatewayMetrics - [corrId=CORR-DEMO-1003] Responded with HTTP 429 Too Many Requests (Retry-After: 5s)
